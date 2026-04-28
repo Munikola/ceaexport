@@ -4,6 +4,10 @@
 
 @layer base {
   html {
+    /* Base font-size = 13px (en lugar de los 16px por defecto del navegador).
+       Tailwind usa rem para fuentes/paddings/márgenes, así que toda la
+       plataforma se densifica proporcionalmente. */
+    font-size: 13px;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
@@ -14,17 +18,52 @@
     font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   }
 
+  /* Filas y celdas de tabla compactas en toda la app. */
+  table th,
+  table td {
+    padding-top: 0.2rem !important;
+    padding-bottom: 0.2rem !important;
+  }
+
+  /* Resalte naranja MUY suave (pastel cremita) para inputs/selects con datos. */
+  input.has-value,
+  select.has-value,
+  textarea.has-value {
+    background-color: rgb(255 251 245) !important; /* casi blanco con tinte naranja */
+    border-color: rgb(253 230 200) !important;     /* orange-100 muy claro */
+    color: rgb(51 65 85) !important;               /* slate-700 — texto normal, no naranja */
+  }
+  /* Botones-toggle (chips) seleccionados con .has-value: un poco más visible */
+  button.has-value,
+  .has-value.has-value {
+    background-color: rgb(255 247 237) !important; /* orange-50 */
+    border-color: rgb(254 215 170) !important;     /* orange-200 */
+    color: rgb(154 52 18) !important;              /* orange-800 */
+  }
+
   button {
     @apply select-none;
   }
 
-  /* Touch targets >= 44px en móvil */
+  /* Touch targets >= 40px en móvil/tablet */
   @media (pointer: coarse) {
     button,
     [role='button'],
     input,
     select {
-      min-height: 44px;
+      min-height: 40px;
     }
   }
+}
+
+/* Fuera de @layer para máxima especificidad: quita las flechas de los inputs
+   numéricos en TODA la app. */
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none !important;
+  margin: 0 !important;
+}
+input[type='number'] {
+  -moz-appearance: textfield !important;
+  appearance: textfield !important;
 }

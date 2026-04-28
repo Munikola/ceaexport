@@ -221,6 +221,7 @@ export interface SamplingIO {
   good_units?: number | null
   defect_percentage?: number | null
   good_percentage?: number | null
+  so2_ppm?: number | null
   defects: SamplingDefectIO[]
 }
 

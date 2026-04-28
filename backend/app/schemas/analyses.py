@@ -110,6 +110,7 @@ class SamplingIO(BaseModel):
     good_units: int | None = None
     defect_percentage: Decimal | None = None
     good_percentage: Decimal | None = None
+    so2_ppm: Decimal | None = None
     defects: list[SamplingDefectIO] = []
 
 
@@ -198,6 +199,7 @@ class SamplingRead(BaseModel):
     good_units: int | None
     defect_percentage: Decimal | None
     good_percentage: Decimal | None
+    so2_ppm: Decimal | None
     defects: list[SamplingDefectRead]
 
 

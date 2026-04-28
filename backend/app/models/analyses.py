@@ -120,6 +120,7 @@ class AnalysisSampling(Base):
     good_units: Mapped[int | None] = mapped_column(Integer)
     defect_percentage: Mapped[Decimal | None] = mapped_column(Numeric(6, 2))
     good_percentage: Mapped[Decimal | None] = mapped_column(Numeric(6, 2))
+    so2_ppm: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
 
     analysis: Mapped[QualityAnalysis] = relationship(back_populates="samplings")
     defects: Mapped[list["SamplingDefect"]] = relationship(

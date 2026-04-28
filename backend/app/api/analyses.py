@@ -250,6 +250,7 @@ def _replace_collections(db: Session, qa: QualityAnalysis, payload: AnalysisUpse
             good_units=s.good_units,
             defect_percentage=s.defect_percentage,
             good_percentage=s.good_percentage,
+            so2_ppm=s.so2_ppm,
         )
         db.add(sampling)
         db.flush()

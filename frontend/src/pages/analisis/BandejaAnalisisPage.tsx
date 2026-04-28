@@ -171,7 +171,7 @@ export default function BandejaAnalisisPage() {
                   <tr
                     key={row.lot_id}
                     onClick={() => open(row)}
-                    className="cursor-pointer border-t border-slate-100 hover:bg-cea-50/50"
+                    className="group cursor-pointer border-t border-slate-100 hover:bg-cea-50/50"
                   >
                     <td className="px-4 py-3">
                       <div className="font-mono text-base font-bold text-slate-900">
@@ -232,15 +232,15 @@ export default function BandejaAnalisisPage() {
                       {row.total_lbs?.toLocaleString('es-EC', { maximumFractionDigits: 0 }) ??
                         '—'}
                     </td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-4 py-3 pr-6 text-right">
                       {row.board_state === 'pendiente' && (
-                        <span className="inline-flex items-center gap-1 text-xs text-amber-700">
+                        <span className="mr-3 inline-flex items-center gap-1 text-xs text-amber-700">
                           <Clock className="h-3 w-3" />
                           {(row.hours_since_reception ?? 0).toFixed(1)} h
                         </span>
                       )}
-                      <span className="ml-2 rounded-lg border border-slate-300 bg-white px-3 py-1 text-xs font-medium text-slate-700 hover:border-cea-500 hover:bg-cea-50">
-                        Abrir
+                      <span className="inline-flex items-center gap-1 rounded-lg border border-cea-300 bg-cea-50 px-4 py-1.5 text-xs font-semibold text-cea-800 shadow-sm transition group-hover:border-cea-500 group-hover:bg-cea-100">
+                        Abrir →
                       </span>
                     </td>
                   </tr>

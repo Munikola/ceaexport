@@ -410,6 +410,7 @@ CREATE TABLE analysis_samplings (
     good_units         INT,             -- "Total camarón bueno"
     defect_percentage  NUMERIC(6,2),
     good_percentage    NUMERIC(6,2),
+    so2_ppm            NUMERIC(10,2),   -- SO₂ residual de este muestreo (algunos análisis tienen 1-3 lecturas distintas)
     UNIQUE (analysis_id, sampling_index)
 );
 
