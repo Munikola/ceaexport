@@ -21,7 +21,7 @@ interface Tile {
 
 const TILES: Tile[] = [
   { icon: Truck, label: 'Nueva recepción', color: 'bg-cea-600', to: '/recepcion', roles: ['admin', 'recepcion'] },
-  { icon: ClipboardList, label: 'Análisis pendientes', color: 'bg-emerald-600', to: '/analisis', roles: ['admin', 'analista_lab', 'supervisor_calidad', 'jefe_calidad'] },
+  { icon: ClipboardList, label: 'Muestras de lotes', color: 'bg-emerald-600', to: '/analisis', roles: ['admin', 'analista_lab', 'supervisor_calidad', 'jefe_calidad'] },
   { icon: Search, label: 'Buscar lote', color: 'bg-slate-600', to: '/buscar' },
   { icon: FlaskConical, label: 'Histogramas', color: 'bg-purple-600', to: '/histogramas', roles: ['admin', 'analista_lab', 'supervisor_calidad', 'jefe_calidad'] },
   { icon: BarChart3, label: 'Dashboard', color: 'bg-amber-600', to: '/dashboard', roles: ['admin', 'jefe_calidad', 'consulta'] },

@@ -8,9 +8,11 @@ import ResetPassword from './pages/public/ResetPassword'
 import ProfilePage from './pages/ProfilePage'
 import UsersPage from './pages/admin/UsersPage'
 import RecepcionPage from './pages/recepcion/RecepcionPage'
-import RecepcionExitoPage from './pages/recepcion/RecepcionExitoPage'
+import BandejaAnalisisPage from './pages/analisis/BandejaAnalisisPage'
+import AnalisisFichaPage from './pages/analisis/AnalisisFichaPage'
 
 const RECEPCION_ROLES = ['admin', 'recepcion']
+const ANALISIS_ROLES = ['admin', 'analista_lab', 'supervisor_calidad', 'jefe_calidad']
 
 export default function App() {
   return (
@@ -55,10 +57,26 @@ export default function App() {
           }
         />
         <Route
-          path="/recepcion/:id/exito"
+          path="/analisis"
           element={
-            <ProtectedRoute roles={RECEPCION_ROLES}>
-              <RecepcionExitoPage />
+            <ProtectedRoute roles={ANALISIS_ROLES}>
+              <BandejaAnalisisPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/analisis/lote/:lotId"
+          element={
+            <ProtectedRoute roles={ANALISIS_ROLES}>
+              <AnalisisFichaPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/analisis/:analysisId"
+          element={
+            <ProtectedRoute roles={ANALISIS_ROLES}>
+              <AnalisisFichaPage />
             </ProtectedRoute>
           }
         />
