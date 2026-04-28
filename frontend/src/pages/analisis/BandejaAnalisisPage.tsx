@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft, ClipboardList, Clock, Package, Search } from 'lucide-react'
+import { ArrowLeft, ClipboardList, Clock, Image as ImageIcon, Package, Search } from 'lucide-react'
 import { api } from '../../api/client'
+import LotPhotosModal from '../../components/LotPhotosModal'
 import type { BoardState, LotBoardRow } from '../../types/domain'
 
 interface TabDef {
@@ -22,6 +23,7 @@ export default function BandejaAnalisisPage() {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<TabDef['state']>('todos')
   const [filter, setFilter] = useState('')
+  const [photosLot, setPhotosLot] = useState<{ id: number; code: string } | null>(null)
 
   const q = useQuery({
     queryKey: ['analyses', 'board'],
@@ -149,8 +151,8 @@ export default function BandejaAnalisisPage() {
         )}
 
         {q.data && rows.length > 0 && (
-          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <table className="w-full text-sm">
+          <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <table className="w-full min-w-[920px] text-sm">
               <thead className="bg-slate-100 text-left text-xs uppercase tracking-wider text-slate-600">
                 <tr>
                   <th className="px-4 py-3 font-semibold">Código</th>
@@ -159,6 +161,7 @@ export default function BandejaAnalisisPage() {
                   <th className="px-4 py-3 font-semibold">Origen</th>
                   <th className="px-4 py-3 font-semibold">Estado</th>
                   <th className="px-4 py-3 font-semibold">Analista</th>
+                  <th className="px-3 py-3 text-center font-semibold">Archivos</th>
                   <th className="px-4 py-3 text-right font-semibold">Lbs</th>
                   <th className="px-4 py-3 text-right">{/* acción */}</th>
                 </tr>
@@ -207,6 +210,24 @@ export default function BandejaAnalisisPage() {
                     <td className="px-4 py-3 text-slate-700">
                       {row.analyst_name ?? '—'}
                     </td>
+                    <td className="px-3 py-3 text-center">
+                      {row.attachment_count > 0 ? (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setPhotosLot({ id: row.lot_id, code: row.lot_code })
+                          }}
+                          title={`Ver ${row.attachment_count} archivo(s)`}
+                          className="inline-flex items-center gap-1 rounded-full border border-cea-200 bg-cea-50 px-2 py-0.5 text-xs font-semibold text-cea-700 transition hover:border-cea-500 hover:bg-cea-100"
+                        >
+                          <ImageIcon className="h-3.5 w-3.5" />
+                          {row.attachment_count}
+                        </button>
+                      ) : (
+                        <span className="text-xs text-slate-300">—</span>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-right tabular-nums font-semibold text-slate-900">
                       {row.total_lbs?.toLocaleString('es-EC', { maximumFractionDigits: 0 }) ??
                         '—'}
@@ -229,6 +250,14 @@ export default function BandejaAnalisisPage() {
           </div>
         )}
       </main>
+
+      {photosLot && (
+        <LotPhotosModal
+          lotId={photosLot.id}
+          lotCode={photosLot.code}
+          onClose={() => setPhotosLot(null)}
+        />
+      )}
     </div>
   )
 }

@@ -21,6 +21,7 @@ import { useCatalog } from '../../hooks/useCatalogs'
 import { useAuth } from '../../contexts/AuthContext'
 import CatalogSelect from '../../components/CatalogSelect'
 import AttachmentsSection from '../../components/AttachmentsSection'
+import RecepcionDetalleModal from '../../components/RecepcionDetalleModal'
 import type {
   AnalysisRead,
   AnalysisUpsert,
@@ -140,161 +141,61 @@ export default function AnalisisFichaPage() {
   const ctx = lotContextQuery.data ?? null
   const [trazaOpen, setTrazaOpen] = useState(false)
   const [clientError, setClientError] = useState<string | null>(null)
+  const [recepcionModalOpen, setRecepcionModalOpen] = useState(false)
 
   const update = (patch: Partial<AnalysisUpsert>) => setForm((f) => ({ ...f, ...patch }))
 
   return (
     <div className="min-h-screen bg-slate-50 pb-24">
-      {/* Sticky header — toda la cabecera identificativa permanece visible */}
+      {/* Sticky header compacto — solo lo esencial siempre visible */}
       <header className="sticky top-0 z-20 border-b border-slate-200 bg-white shadow-sm">
-        <div className="mx-auto max-w-6xl px-4 pb-3 pt-4">
-          {/* Volver */}
-          <button
-            onClick={() => navigate('/analisis')}
-            className="mb-2 flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-slate-900"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" /> Volver
-          </button>
-
-          {/* Título: lote + estado + tags */}
+        <div className="mx-auto max-w-6xl px-4 pb-2 pt-2">
+          {/* Línea 1: volver + título + estado + acciones (todo en una fila) */}
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+            <button
+              onClick={() => navigate('/analisis')}
+              className="flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-slate-900"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" /> Volver
+            </button>
+            <span className="text-slate-300">|</span>
+
+            <h1 className="text-base font-bold tracking-tight text-slate-900 sm:text-lg">
               {ctx ? (
                 <>
                   Lote <span className="font-mono">{ctx.lot_code}</span>
-                  <span className="ml-1 text-base font-medium text-slate-400">
+                  <span className="ml-1 text-sm font-medium text-slate-400">
                     /{ctx.lot_year}
                   </span>
                 </>
               ) : (
-                'Cargando lote…'
+                'Cargando…'
               )}
             </h1>
             <StatusBadge status={form.status} />
-            <span className="text-xs text-slate-400">·</span>
-            <span className="text-xs lowercase text-slate-500">
-              {ctx?.product_type ?? ''}
-              {ctx?.receptions[0] && (
-                <> · recepción {ctx.receptions[0].reception_date}</>
-              )}
-            </span>
-          </div>
+            {ctx?.product_type && (
+              <span className="text-xs text-slate-500">
+                Tipo de producto: <span className="font-semibold text-slate-700">{ctx.product_type}</span>
+              </span>
+            )}
 
-          {/* Card con datos identificativos del lote */}
-          {ctx && (
-            <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3">
-              <div className="grid gap-x-6 gap-y-2 sm:grid-cols-2 lg:grid-cols-4">
-                <KeyVal
-                  label="Origen"
-                  value={[ctx.supplier_name, ctx.origin_name].filter(Boolean).join(' — ')}
-                />
-                <KeyVal label="Producto" value={ctx.product_type} />
-                <KeyVal label="PSC" value={ctx.psc} />
-                <KeyVal
-                  label="Total recibido"
-                  value={
-                    ctx.total_lbs != null
-                      ? `${Number(ctx.total_lbs).toLocaleString('es-EC', {
-                          maximumFractionDigits: 0,
-                        })} lbs`
-                      : null
-                  }
-                  highlight
-                />
-              </div>
-              {/* Entregas (camiones) — colapsable */}
-              {ctx.receptions.length > 0 && (
-                <div className="mt-2 border-t border-slate-200 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setTrazaOpen((v) => !v)}
-                    className="flex items-center gap-1.5 text-xs font-medium text-slate-600 hover:text-slate-900"
-                  >
-                    <ChevronDown
-                      className={`h-3.5 w-3.5 transition ${trazaOpen ? '' : '-rotate-90'}`}
-                    />
-                    {ctx.receptions.length === 1
-                      ? '1 entrega'
-                      : `${ctx.receptions.length} entregas`}
-                    <span className="text-slate-400">— Camión, chofer, temperatura</span>
-                  </button>
-                  {trazaOpen && (
-                    <div className="mt-2 space-y-1.5">
-                      {ctx.receptions.map((r) => (
-                        <div
-                          key={r.reception_id}
-                          className="grid grid-cols-2 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs sm:grid-cols-6 sm:gap-3"
-                        >
-                          <div className="flex items-center gap-2">
-                            <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-cea-700 text-[10px] font-bold text-white">
-                              {r.delivery_index}
-                            </span>
-                            <span className="font-semibold text-slate-900">
-                              {r.reception_date}
-                            </span>
-                            {r.arrival_time && (
-                              <span className="text-slate-500">
-                                {r.arrival_time.slice(0, 5)}
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <Truck className="h-3 w-3 text-slate-400" />
-                            <span className="font-medium text-slate-700">
-                              {r.plate_number ?? '—'}
-                            </span>
-                          </div>
-                          <div className="text-slate-700">{r.driver_name ?? '—'}</div>
-                          <div className="text-slate-500">{r.logistics_name ?? '—'}</div>
-                          <div className="flex items-center gap-1 text-slate-600">
-                            {r.arrival_temperature != null && (
-                              <>
-                                <Snowflake className="h-3 w-3" />
-                                {Number(r.arrival_temperature).toFixed(1)}°C
-                              </>
-                            )}
-                          </div>
-                          <div className="text-right font-semibold tabular-nums text-slate-900">
-                            {r.received_lbs != null
-                              ? `${Number(r.received_lbs).toLocaleString('es-EC', {
-                                  maximumFractionDigits: 0,
-                                })} lbs`
-                              : '—'}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
+            {/* Spacer para empujar las acciones a la derecha */}
+            <div className="flex-1" />
 
-          {/* Toolbar destacado: analista + fecha + guardar */}
-          <div className="mt-3 rounded-xl border-2 border-cea-200 bg-white p-3 shadow-sm ring-1 ring-cea-900/5">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-              <div className="flex-1">
-                <ToolbarLabel>Analista</ToolbarLabel>
-                <input
-                  type="text"
-                  readOnly
-                  value={user?.full_name ?? ''}
-                  className="w-full cursor-default rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900"
-                />
-              </div>
-              <div className="flex-1">
-                <ToolbarLabel>Fecha de análisis</ToolbarLabel>
-                <input
-                  type="date"
-                  value={form.analysis_date}
-                  onChange={(e) => update({ analysis_date: e.target.value })}
-                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-900 outline-none focus:border-cea-500 focus:ring-2 focus:ring-cea-500/30"
-                />
-              </div>
+            {/* Toolbar inline: analista (compacto) + fecha + guardar */}
+            <div className="flex items-center gap-2">
+              <span className="hidden text-xs text-slate-500 sm:inline">
+                {user?.full_name?.split(' ')[0]}
+              </span>
+              <input
+                type="date"
+                value={form.analysis_date}
+                onChange={(e) => update({ analysis_date: e.target.value })}
+                className="rounded-md border border-slate-300 bg-white px-2 py-1.5 text-xs font-semibold text-slate-900 outline-none focus:border-cea-500 focus:ring-2 focus:ring-cea-500/30"
+              />
               <button
                 type="button"
                 onClick={() => {
-                  // Validación cliente: liberar/rechazar exige decisión
                   if (
                     (form.status === 'validado' || form.status === 'rechazado') &&
                     form.decision_id == null
@@ -309,13 +210,101 @@ export default function AnalisisFichaPage() {
                   save.mutate(form)
                 }}
                 disabled={save.isPending || form.lot_ids.length === 0}
-                className="flex items-center justify-center gap-1.5 rounded-lg bg-cea-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-cea-800 disabled:bg-slate-300"
+                className="flex items-center gap-1.5 rounded-md bg-cea-700 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-cea-800 disabled:bg-slate-300"
               >
-                <Save className="h-4 w-4" />
-                {save.isPending ? 'Guardando…' : 'Guardar resultados'}
+                <Save className="h-3.5 w-3.5" />
+                {save.isPending ? 'Guardando…' : 'Guardar'}
               </button>
             </div>
           </div>
+
+          {/* Línea 2: tira con datos clave del lote (single line, scrollable) */}
+          {ctx && (
+            <div className="mt-1.5 flex items-center gap-1 border-t border-slate-100 pt-1.5">
+              <button
+                type="button"
+                onClick={() => setTrazaOpen((v) => !v)}
+                className="shrink-0 rounded-md p-0.5 hover:bg-slate-100"
+                title={trazaOpen ? 'Ocultar entregas' : 'Ver entregas'}
+              >
+                <ChevronDown
+                  className={`h-4 w-4 text-cea-700 transition ${trazaOpen ? '' : '-rotate-90'}`}
+                />
+              </button>
+              <div className="flex flex-1 items-center gap-x-3 gap-y-1 overflow-x-auto whitespace-nowrap text-xs">
+                <Pill label="Origen" value={ctx.supplier_name} />
+                {ctx.origin_name && (
+                  <>
+                    <Sep />
+                    <Pill label="Procedencia" value={ctx.origin_name} />
+                  </>
+                )}
+                {ctx.psc && (
+                  <>
+                    <Sep />
+                    <Pill label="PSC" value={ctx.psc} />
+                  </>
+                )}
+                <Sep />
+                <span className="font-bold tabular-nums text-cea-700">
+                  {ctx.total_lbs != null
+                    ? `${Number(ctx.total_lbs).toLocaleString('es-EC', {
+                        maximumFractionDigits: 0,
+                      })} lbs`
+                    : '— lbs'}
+                </span>
+                <Sep />
+                <span className="font-medium text-slate-600">
+                  {ctx.receptions.length === 1
+                    ? '1 entrega'
+                    : `${ctx.receptions.length} entregas`}
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Detalle expandido de entregas */}
+          {ctx && trazaOpen && ctx.receptions.length > 0 && (
+            <div className="mt-2 space-y-1.5 border-t border-slate-100 pt-2">
+              {ctx.receptions.map((r) => (
+                <div
+                  key={r.reception_id}
+                  className="grid grid-cols-2 items-center gap-2 rounded-lg border border-slate-200 bg-slate-50/60 px-3 py-1.5 text-xs sm:grid-cols-6 sm:gap-3"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-cea-700 text-[10px] font-bold text-white">
+                      {r.delivery_index}
+                    </span>
+                    <span className="font-semibold text-slate-900">{r.reception_date}</span>
+                    {r.arrival_time && (
+                      <span className="text-slate-500">{r.arrival_time.slice(0, 5)}</span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Truck className="h-3 w-3 text-slate-400" />
+                    <span className="font-medium text-slate-700">{r.plate_number ?? '—'}</span>
+                  </div>
+                  <div className="text-slate-700">{r.driver_name ?? '—'}</div>
+                  <div className="text-slate-500">{r.logistics_name ?? '—'}</div>
+                  <div className="flex items-center gap-1 text-slate-600">
+                    {r.arrival_temperature != null && (
+                      <>
+                        <Snowflake className="h-3 w-3" />
+                        {Number(r.arrival_temperature).toFixed(1)}°C
+                      </>
+                    )}
+                  </div>
+                  <div className="text-right font-semibold tabular-nums text-slate-900">
+                    {r.received_lbs != null
+                      ? `${Number(r.received_lbs).toLocaleString('es-EC', {
+                          maximumFractionDigits: 0,
+                        })} lbs`
+                      : '—'}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </header>
 
@@ -330,8 +319,16 @@ export default function AnalisisFichaPage() {
         </div>
       )}
 
+      {recepcionModalOpen && ctx && (
+        <RecepcionDetalleModal ctx={ctx} onClose={() => setRecepcionModalOpen(false)} />
+      )}
+
       <main className="mx-auto max-w-6xl space-y-6 px-4 py-6">
-        <SectionCabecera form={form} update={update} />
+        <SectionCabecera
+          form={form}
+          update={update}
+          onVerRecepcion={ctx ? () => setRecepcionModalOpen(true) : undefined}
+        />
         <SectionFisicos form={form} update={update} />
         <SectionOrganoleptico title="Crudo" id="crudo" state="crudo" form={form} update={update} />
         <SectionOrganoleptico title="Cocido" id="cocido" state="cocido" form={form} update={update} />
@@ -435,38 +432,20 @@ function adaptReadToUpsert(r: AnalysisRead): AnalysisUpsert {
 // Pequeños componentes UI
 // =========================================================================
 
-function KeyVal({
-  label,
-  value,
-  highlight,
-}: {
-  label: string
-  value: string | null | undefined
-  highlight?: boolean
-}) {
+function Pill({ label, value }: { label: string; value: string | null | undefined }) {
+  if (!value) return null
   return (
-    <div className="leading-tight">
-      <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+    <span className="inline-flex items-baseline gap-1">
+      <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
         {label}
-      </div>
-      <div
-        className={`mt-0.5 truncate text-sm ${
-          highlight ? 'font-bold text-cea-700' : 'font-semibold text-slate-900'
-        }`}
-        title={value ?? ''}
-      >
-        {value || '—'}
-      </div>
-    </div>
+      </span>
+      <span className="font-medium text-slate-800">{value}</span>
+    </span>
   )
 }
 
-function ToolbarLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="mb-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-      {children}
-    </div>
-  )
+function Sep() {
+  return <span className="text-slate-300">·</span>
 }
 
 function StatusBadge({ status }: { status: string }) {
@@ -477,7 +456,7 @@ function StatusBadge({ status }: { status: string }) {
     rechazado: 'bg-red-100 text-red-800 ring-red-300',
   }
   const label: Record<string, string> = {
-    borrador: 'borrador',
+    borrador: 'en análisis',
     en_revision: 'en revisión',
     validado: 'liberada',
     rechazado: 'rechazada',
@@ -499,19 +478,21 @@ function Section({
   icon: Icon,
   children,
   description,
+  action,
 }: {
   id: string
   title: string
   icon: typeof ClipboardCheck
   children: React.ReactNode
   description?: string
+  action?: React.ReactNode
 }) {
   return (
     <section
       id={id}
       className="scroll-mt-32 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ring-1 ring-slate-900/5"
     >
-      <header className="flex items-center justify-between border-b border-slate-200 bg-gradient-to-b from-slate-50 to-white px-6 py-4">
+      <header className="flex items-center justify-between gap-3 border-b border-slate-200 bg-gradient-to-b from-slate-50 to-white px-6 py-4">
         <div className="flex items-center gap-3">
           <div className="rounded-lg bg-cea-100 p-2 ring-1 ring-cea-200">
             <Icon className="h-4 w-4 text-cea-700" strokeWidth={2.5} />
@@ -523,6 +504,7 @@ function Section({
             )}
           </div>
         </div>
+        {action && <div className="shrink-0">{action}</div>}
       </header>
       <div className="p-6">{children}</div>
     </section>
@@ -587,12 +569,30 @@ function NumInput({
 function SectionCabecera({
   form,
   update,
+  onVerRecepcion,
 }: {
   form: AnalysisUpsert
   update: (p: Partial<AnalysisUpsert>) => void
+  onVerRecepcion?: () => void
 }) {
   return (
-    <Section id="general" title="Datos generales" icon={ClipboardCheck}>
+    <Section
+      id="general"
+      title="Datos generales"
+      icon={ClipboardCheck}
+      action={
+        onVerRecepcion && (
+          <button
+            type="button"
+            onClick={onVerRecepcion}
+            className="flex items-center gap-1.5 rounded-lg bg-slate-800 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-900"
+          >
+            <Truck className="h-4 w-4" />
+            <span className="hidden sm:inline">Datos recepción</span>
+          </button>
+        )
+      }
+    >
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
         <Field label="Planta">
           <CatalogSelect
@@ -963,7 +963,7 @@ function ChipsMultiSelect({
 
       {/* Detalle de los seleccionados (intensidad + opcional %) */}
       {selected.length > 0 && (
-        <div className="mt-3 overflow-hidden rounded-xl border border-slate-200">
+        <div className="mt-3 overflow-x-auto rounded-xl border border-slate-200">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-200 bg-slate-100 text-left text-xs uppercase tracking-wider text-slate-600">
@@ -1087,21 +1087,33 @@ function SectionMuestreos({
     updateSampling(idx, { defects: next })
   }
 
+  // Cálculos auto: piezas totales sumadas y total defectos
+  const totalPiezas = form.samplings.reduce((a, s) => a + (s.units_count ?? 0), 0)
+  const totalDefectos = form.samplings.reduce(
+    (a, s) => a + s.defects.reduce((b, d) => b + (d.units_count ?? 0), 0),
+    0,
+  )
+  const pctTotal = totalPiezas > 0 ? (totalDefectos / totalPiezas) * 100 : 0
+
   return (
     <Section
       id="muestreos"
       title="Muestreos (1, 2, 3)"
       icon={ListChecks}
-      description="Defectos por muestreo según R-CC-001"
+      description="Defectos por muestreo según R-CC-001 — Total y % se calculan solos"
     >
-      <div className="overflow-hidden rounded-xl border border-slate-200">
-        <table className="muestreos-table w-full min-w-[600px] text-sm">
+      <div className="overflow-x-auto rounded-xl border border-slate-200">
+        <table className="muestreos-table w-full min-w-[640px] text-sm">
           <thead>
             <tr className="border-b-2 border-slate-300 bg-slate-100 text-left text-xs uppercase tracking-wider text-slate-700">
               <th className="py-3 pl-4 pr-2 font-bold">Defecto</th>
-              <th className="w-28 px-3 py-3 text-center font-bold">1er</th>
-              <th className="w-28 px-3 py-3 text-center font-bold">2do</th>
-              <th className="w-28 px-3 py-3 text-center font-bold">3ro</th>
+              <th className="w-20 px-2 py-3 text-center font-bold">1er</th>
+              <th className="w-20 px-2 py-3 text-center font-bold">2do</th>
+              <th className="w-20 px-2 py-3 text-center font-bold">3ro</th>
+              <th className="w-24 border-l-2 border-slate-300 bg-slate-200/60 px-3 py-3 text-center font-bold">
+                Total
+              </th>
+              <th className="w-24 bg-slate-200/60 px-3 py-3 text-center font-bold">% def.</th>
             </tr>
           </thead>
           <tbody>
@@ -1111,7 +1123,7 @@ function SectionMuestreos({
                 Piezas totales
               </td>
               {form.samplings.map((s, i) => (
-                <td key={i} className="px-3 py-2.5 text-right">
+                <td key={i} className="px-2 py-2.5 text-right">
                   <input
                     type="number"
                     step="1"
@@ -1125,6 +1137,12 @@ function SectionMuestreos({
                   />
                 </td>
               ))}
+              <td
+                colSpan={2}
+                className="border-l-2 border-cea-200 bg-cea-100/60 px-3 py-3 text-right text-sm font-bold text-cea-900"
+              >
+                {totalPiezas > 0 ? totalPiezas.toLocaleString('es-EC') : '—'}
+              </td>
             </tr>
 
             {paperDefects.map((d, idx) => (
@@ -1134,6 +1152,7 @@ function SectionMuestreos({
                 samplings={form.samplings}
                 defectId={d.id}
                 onSet={setDefectCount}
+                totalPiezas={totalPiezas}
                 zebra={idx % 2 === 1}
               />
             ))}
@@ -1151,8 +1170,34 @@ function SectionMuestreos({
                   samplings={form.samplings}
                   defectId={d.id}
                   onSet={setDefectCount}
+                  totalPiezas={totalPiezas}
                 />
               ))}
+
+            {/* Fila de totales globales */}
+            {totalDefectos > 0 && (
+              <tr className="border-t-2 border-slate-300 bg-slate-100 text-sm font-bold">
+                <td className="py-3 pl-4 pr-2 text-xs uppercase tracking-wide text-slate-700">
+                  Total defectos
+                </td>
+                {form.samplings.map((s, i) => {
+                  const sum = s.defects.reduce((a, d) => a + (d.units_count ?? 0), 0)
+                  return (
+                    <td key={i} className="px-2 py-3 text-center tabular-nums text-slate-900">
+                      {sum > 0 ? sum : '—'}
+                    </td>
+                  )
+                })}
+                <td className="border-l-2 border-slate-300 bg-slate-200/80 px-3 py-3 text-right tabular-nums text-slate-900">
+                  {totalDefectos}
+                </td>
+                <td
+                  className={`bg-slate-200/80 px-3 py-3 text-right tabular-nums ${pctTotalClass(pctTotal)}`}
+                >
+                  {totalPiezas > 0 ? `${pctTotal.toFixed(1)}%` : '—'}
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
@@ -1190,11 +1235,19 @@ function SectionMuestreos({
   )
 }
 
+function pctTotalClass(pct: number): string {
+  if (pct >= 30) return 'font-bold text-red-700'
+  if (pct >= 15) return 'font-bold text-amber-700'
+  if (pct >= 5) return 'font-semibold text-amber-600'
+  return 'font-semibold text-emerald-700'
+}
+
 function DefectRow({
   name,
   defectId,
   samplings,
   onSet,
+  totalPiezas,
   zebra = false,
   isExtra = false,
 }: {
@@ -1202,12 +1255,21 @@ function DefectRow({
   defectId: number
   samplings: SamplingIO[]
   onSet: (samplingIdx: number, defectId: number, count: number | null) => void
+  totalPiezas: number
   zebra?: boolean
   isExtra?: boolean
 }) {
   // focus-within ilumina toda la fila cuando cualquier input recibe foco.
   const baseBg = isExtra ? 'bg-amber-50/40' : zebra ? 'bg-slate-50' : 'bg-white'
   const hoverBg = isExtra ? 'hover:bg-amber-50/70' : 'hover:bg-cea-50/40'
+
+  // Total y % por defecto
+  const total = samplings.reduce((acc, s) => {
+    const entry = s.defects.find((x) => x.defect_id === defectId)
+    return acc + (entry?.units_count ?? 0)
+  }, 0)
+  const pct = totalPiezas > 0 ? (total / totalPiezas) * 100 : 0
+
   return (
     <tr
       className={`border-b border-slate-200 ${baseBg} ${hoverBg} focus-within:!bg-cea-100 focus-within:shadow-[inset_3px_0_0_0_theme(colors.cea.700)]`}
@@ -1227,7 +1289,7 @@ function DefectRow({
         return (
           <td
             key={i}
-            className="border-l border-dashed border-slate-200 px-3 py-2 text-right align-middle"
+            className="border-l border-dashed border-slate-200 px-2 py-2 text-right align-middle"
           >
             <input
               type="number"
@@ -1242,6 +1304,16 @@ function DefectRow({
           </td>
         )
       })}
+      <td className="border-l-2 border-slate-300 bg-slate-100/60 px-3 py-2 text-right align-middle tabular-nums font-semibold text-slate-900">
+        {total > 0 ? total : '—'}
+      </td>
+      <td
+        className={`bg-slate-100/60 px-3 py-2 text-right align-middle tabular-nums ${
+          total > 0 ? pctTotalClass(pct) : 'text-slate-400'
+        }`}
+      >
+        {totalPiezas > 0 && total > 0 ? `${pct.toFixed(1)}%` : '—'}
+      </td>
     </tr>
   )
 }
@@ -1291,7 +1363,7 @@ function SectionMiniHistograma({
       icon={BarChart3}
       description="Mini-histograma del R-CC-001 (la curva grande va al R-CC-034)"
     >
-      <div className="overflow-hidden rounded-xl border border-slate-200">
+      <div className="overflow-x-auto rounded-xl border border-slate-200">
         <table className="w-full min-w-[480px] text-sm">
           <thead>
             <tr className="border-b-2 border-slate-300 bg-slate-100 text-left text-xs uppercase tracking-wider text-slate-700">

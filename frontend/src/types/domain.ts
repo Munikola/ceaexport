@@ -148,6 +148,7 @@ export interface LotBoardRow {
   analyst_id: number | null
   analyst_name: string | null
   decision_name: string | null
+  attachment_count: number
   board_state: BoardState | string
 }
 
@@ -163,6 +164,13 @@ export interface LotReceptionInfo {
   received_lbs: number | null
   boxes_count: number | null
   bins_count: number | null
+  plant_name: string | null
+  remission_guide_number: string | null
+  warranty_letter_number: string | null
+  truck_condition: string | null
+  ice_condition: string | null
+  hygiene_condition: string | null
+  observations: string | null
 }
 
 export interface AttachmentRead {
