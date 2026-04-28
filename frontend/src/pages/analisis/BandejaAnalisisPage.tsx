@@ -33,10 +33,16 @@ export default function BandejaAnalisisPage() {
   const [activeTab, setActiveTab] = useState<TabDef['state']>('todos')
   const [filter, setFilter] = useState('')
   const [photosLot, setPhotosLot] = useState<{ id: number; code: string } | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState<
+    { analysisId: number; lotCode: string } | null
+  >(null)
 
   const removeAnalysis = useMutation({
     mutationFn: async (id: number) => api.delete(`/api/analyses/${id}`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['analyses', 'board'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['analyses', 'board'] })
+      setConfirmDelete(null)
+    },
   })
 
   const q = useQuery({
@@ -259,13 +265,10 @@ export default function BandejaAnalisisPage() {
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation()
-                              if (
-                                window.confirm(
-                                  `¿Eliminar el análisis del lote ${row.lot_code}? Se borrarán todos sus datos.`,
-                                )
-                              ) {
-                                removeAnalysis.mutate(row.analysis_id!)
-                              }
+                              setConfirmDelete({
+                                analysisId: row.analysis_id!,
+                                lotCode: row.lot_code,
+                              })
                             }}
                             title="Eliminar análisis"
                             className="rounded-md border border-red-200 bg-red-50 p-1.5 text-red-700 transition hover:border-red-400 hover:bg-red-100"
@@ -292,6 +295,53 @@ export default function BandejaAnalisisPage() {
           lotCode={photosLot.code}
           onClose={() => setPhotosLot(null)}
         />
+      )}
+
+      {/* Modal de confirmación de borrado */}
+      {confirmDelete && (
+        <div
+          onClick={() => !removeAnalysis.isPending && setConfirmDelete(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-xl"
+          >
+            <div className="flex items-start gap-3 border-b border-slate-200 bg-red-50 px-5 py-4">
+              <div className="rounded-lg bg-red-100 p-2 ring-1 ring-red-200">
+                <Trash2 className="h-5 w-5 text-red-700" strokeWidth={2.5} />
+              </div>
+              <div className="flex-1">
+                <h2 className="text-base font-bold text-slate-900">
+                  ¿Eliminar el análisis del lote {confirmDelete.lotCode}?
+                </h2>
+                <p className="mt-1 text-xs text-slate-600">
+                  Esta acción no se puede deshacer. Se borrarán todos los datos del
+                  análisis: defectos, organoléptico, mini-histograma y archivos asociados.
+                </p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 px-5 py-3">
+              <button
+                type="button"
+                onClick={() => setConfirmDelete(null)}
+                disabled={removeAnalysis.isPending}
+                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => removeAnalysis.mutate(confirmDelete.analysisId)}
+                disabled={removeAnalysis.isPending}
+                className="flex items-center gap-1.5 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-700 disabled:bg-red-400"
+              >
+                <Trash2 className="h-4 w-4" />
+                {removeAnalysis.isPending ? 'Eliminando…' : 'Eliminar'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
