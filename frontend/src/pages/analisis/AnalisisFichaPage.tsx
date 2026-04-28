@@ -369,7 +369,7 @@ export default function AnalisisFichaPage() {
         <RecepcionDetalleModal ctx={ctx} onClose={() => setRecepcionModalOpen(false)} />
       )}
 
-      <main className="mx-auto max-w-6xl space-y-6 px-4 py-6">
+      <main className="mx-auto max-w-6xl space-y-3 px-4 py-3">
         {/* Toolbar de acciones — fuera del fieldset para que siga funcionando
             aunque el formulario esté en modo lectura. */}
         {ctx && (
@@ -399,11 +399,11 @@ export default function AnalisisFichaPage() {
 
         <fieldset
           disabled={!isEditing}
-          className="space-y-6 transition disabled:cursor-default disabled:opacity-95"
+          className="space-y-3 transition disabled:cursor-default disabled:opacity-95"
         >
         <SectionCabecera form={form} update={update} />
         <SectionFisicos form={form} update={update} />
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-3 md:grid-cols-2">
           <SectionOrganoleptico title="Crudo" id="crudo" state="crudo" form={form} update={update} />
           <SectionOrganoleptico title="Cocido" id="cocido" state="cocido" form={form} update={update} />
         </div>
@@ -638,21 +638,21 @@ function Section({
       id={id}
       className="scroll-mt-32 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ring-1 ring-slate-900/5"
     >
-      <header className="flex items-center justify-between gap-3 border-b border-slate-200 bg-gradient-to-b from-slate-50 to-white px-6 py-4">
-        <div className="flex items-center gap-3">
-          <div className="rounded-lg bg-cea-100 p-2 ring-1 ring-cea-200">
-            <Icon className="h-4 w-4 text-cea-700" strokeWidth={2.5} />
+      <header className="flex items-center justify-between gap-3 border-b border-slate-200 bg-gradient-to-b from-slate-50 to-white px-4 py-2">
+        <div className="flex items-center gap-2">
+          <div className="rounded-md bg-cea-100 p-1.5 ring-1 ring-cea-200">
+            <Icon className="h-3.5 w-3.5 text-cea-700" strokeWidth={2.5} />
           </div>
           <div>
-            <h2 className="text-sm font-bold uppercase tracking-wider text-slate-800">{title}</h2>
+            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-800">{title}</h2>
             {description && (
-              <p className="mt-0.5 text-xs font-normal text-slate-500">{description}</p>
+              <p className="text-[10px] font-normal text-slate-500">{description}</p>
             )}
           </div>
         </div>
         {action && <div className="shrink-0">{action}</div>}
       </header>
-      <div className="p-6">{children}</div>
+      <div className="p-3">{children}</div>
     </section>
   )
 }
@@ -1375,37 +1375,6 @@ function SectionMuestreos({
         {renderDefectsTable(leftPaper, [])}
         {renderDefectsTable(rightPaper, activeExtras)}
       </div>
-
-      {/* Banner de totales globales abajo */}
-      {totalDefectos > 0 && (
-        <div className="mt-4 overflow-hidden rounded-xl border-2 border-slate-300 bg-slate-100">
-          <table className="w-full text-sm">
-            <tbody>
-              <tr className="font-bold">
-                <td className="py-3 pl-3 pr-2 text-xs uppercase tracking-wide text-slate-700">
-                  Total defectos
-                </td>
-                {form.samplings.map((s, i) => {
-                  const sum = s.defects.reduce((a, d) => a + (d.units_count ?? 0), 0)
-                  return (
-                    <td key={i} className="w-20 px-2 py-3 text-center tabular-nums text-slate-900">
-                      {sum > 0 ? sum : '—'}
-                    </td>
-                  )
-                })}
-                <td className="w-24 border-l-2 border-slate-300 bg-slate-200/80 px-3 py-3 text-right tabular-nums text-slate-900">
-                  {totalDefectos}
-                </td>
-                <td
-                  className={`w-24 bg-slate-200/80 px-3 py-3 text-right tabular-nums ${pctTotalClass(pctTotal)}`}
-                >
-                  {totalPiezas > 0 ? `${pctTotal.toFixed(1)}%` : '—'}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      )}
 
       {/* Añadir defecto extra (no preimpreso en el R-CC-001) */}
       <div className="mt-4 flex items-center gap-2 border-t border-slate-100 pt-4">

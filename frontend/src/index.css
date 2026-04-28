@@ -18,11 +18,17 @@
     font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   }
 
-  /* Filas y celdas de tabla compactas en toda la app. */
+  /* Filas y celdas de tabla muy compactas en toda la app. */
   table th,
   table td {
-    padding-top: 0.2rem !important;
-    padding-bottom: 0.2rem !important;
+    padding-top: 0.1rem !important;
+    padding-bottom: 0.1rem !important;
+  }
+  /* Inputs dentro de celdas de tabla: padding interno mínimo. */
+  table td input,
+  table td select {
+    padding-top: 0.15rem !important;
+    padding-bottom: 0.15rem !important;
   }
 
   /* Resalte naranja MUY suave (pastel cremita) para inputs/selects con datos. */
