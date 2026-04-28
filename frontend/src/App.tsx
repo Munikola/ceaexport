@@ -7,6 +7,10 @@ import AcceptInvitation from './pages/public/AcceptInvitation'
 import ResetPassword from './pages/public/ResetPassword'
 import ProfilePage from './pages/ProfilePage'
 import UsersPage from './pages/admin/UsersPage'
+import RecepcionPage from './pages/recepcion/RecepcionPage'
+import RecepcionExitoPage from './pages/recepcion/RecepcionExitoPage'
+
+const RECEPCION_ROLES = ['admin', 'recepcion']
 
 export default function App() {
   return (
@@ -39,6 +43,22 @@ export default function App() {
           element={
             <ProtectedRoute roles={['admin']}>
               <UsersPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/recepcion"
+          element={
+            <ProtectedRoute roles={RECEPCION_ROLES}>
+              <RecepcionPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/recepcion/:id/exito"
+          element={
+            <ProtectedRoute roles={RECEPCION_ROLES}>
+              <RecepcionExitoPage />
             </ProtectedRoute>
           }
         />

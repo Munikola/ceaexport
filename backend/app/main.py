@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import admin, auth, public
+from app.api import admin, auth, catalogs, public, receptions
 from app.core.config import get_settings
 
 settings = get_settings()
@@ -50,10 +50,10 @@ def root() -> dict[str, str]:
 app.include_router(auth.router, prefix="/api")
 app.include_router(admin.router, prefix="/api")
 app.include_router(public.router, prefix="/api")
+app.include_router(catalogs.router, prefix="/api")
+app.include_router(receptions.router, prefix="/api")
 
 # TODO siguientes routers:
-# from app.api import receptions, lots, analyses, histograms
-# app.include_router(receptions.router, prefix="/api/receptions", tags=["receptions"])
-# app.include_router(lots.router, prefix="/api/lots", tags=["lots"])
+# from app.api import lots, analyses, histograms
 # app.include_router(analyses.router, prefix="/api/analyses", tags=["analyses"])
 # app.include_router(histograms.router, prefix="/api/histograms", tags=["histograms"])

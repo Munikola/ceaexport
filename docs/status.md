@@ -11,7 +11,7 @@
 - Catálogos sembrados con valores reales en [`db/seeds.sql`](../db/seeds.sql) (extraídos del Excel + formularios + PDF lote 1233).
 - Vistas de BI en [`db/views.sql`](../db/views.sql), incluida `v_lotes_recibidos` que reproduce el Excel actual columna por columna.
 
-### Sesión 2026-04-28 (UI flow + repo)
+### Sesión 2026-04-28 (UI flow + repo + auth + recepción)
 - Flujo de UI completo en [ui-flow.md](ui-flow.md): F1 Inicio · F2 Recepción (3 pasos) · F3 Bandeja · F4 Análisis (5 pasos) · F5 Histograma · F6 Validación · F7 Búsqueda/Dashboard/Reportes · F8 Admin.
 - Repo inicializado con git, `.gitignore`, `docker-compose.yml`, README.
 - Backend FastAPI esqueleto + sistema de autenticación completo:
@@ -26,6 +26,13 @@
   - Páginas: Login, AcceptInvitation, ResetPassword, Profile, UsersPage (admin), Home con tiles según rol
   - ProtectedRoute con check de rol
 - Migración SQL `01_auth_extensions.sql` para añadir reset_token + user_invitations sin recrear el schema.
+- **Rebanada vertical de RECEPCIÓN end-to-end (F2.1, F2.2, F2.3):**
+  - Backend: modelos ORM de catálogos (12) + operaciones (Reception, Lot, ReceptionLot)
+  - Endpoint genérico `GET/POST /api/catalogs/{name}` para todos los dropdowns
+  - Endpoint `POST /api/receptions` transaccional con N lotes anidados, multi-entrega automática
+  - Frontend: hook `useCatalog`, `CatalogSelect`, `CatalogAutocomplete` con "+ añadir nuevo"
+  - Página `/recepcion` con stepper de 3 pasos, smart-defaults (fecha=hoy, hora=ahora)
+  - Pantalla de éxito tras guardar
 
 ## Cómo probar el schema (no se ha probado todavía)
 
@@ -78,12 +85,17 @@ docker exec -i cea-pg psql -U postgres -d postgres < db/views.sql
   cd ../frontend && npm install && npm run dev
   ```
   Login → invitar usuario → abrir enlace → aceptar → login con nuevo usuario.
-- [ ] **Rebanada vertical de RECEPCIÓN:** primera pantalla operativa real. Backend (`POST /api/receptions`, `POST /api/lots`, etc.) + frontend F2.1/F2.2/F2.3.
-  - Modelos SQLAlchemy de domain: `Reception`, `Lot`, `Supplier`, `Pond`, `Origin`, `LogisticsCompany`, `Truck`, `Driver`, `Treater`, `Chemical`.
-  - Endpoints CRUD de catálogos.
-  - Endpoint de creación de recepción con lotes anidados (transaccional).
-  - Pantallas F2.1 (camión), F2.2 (lotes), F2.3 (resumen).
-- [ ] **Validar el modelo con el laboratorio** (sigue pendiente desde la sesión anterior).
+- [ ] **Iteración 2 sobre RECEPCIÓN** (lo que quedó fuera del MVP de hoy):
+  - Suministros (hielo, sal, sacos meta, kavetas, bines) con catálogo `supply-types`
+  - Sellos de seguridad del camión
+  - Auto-save de borradores
+  - Validación cliente: lote duplicado en el año (modal "¿es entrega adicional?")
+- [ ] **Bandeja de análisis pendientes (F3)**: vista `v_pending_analyses` ya existe en BD; falta el endpoint y la pantalla.
+- [ ] **Análisis de calidad (F4)**: el más denso (5 pasos). Modelos: `QualityAnalysis`, `AnalysisSampling`, `SamplingDefect`, `AnalysisColor/Flavor/Odor`, `AnalysisSizeDistribution`.
+- [ ] **Histograma R-CC-034 (F5)**.
+- [ ] **Validación / firmas (F6)** + PDF generation.
+- [ ] **Dashboard / reportes (F7)** consumiendo las views de BI.
+- [ ] **Validar el modelo con el laboratorio** (sigue pendiente desde la primera sesión).
 
 ### Fase 2 (no ahora)
 
