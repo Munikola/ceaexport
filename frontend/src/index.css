@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    @apply bg-slate-50 text-slate-900;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  button {
+    @apply select-none;
+  }
+
+  /* Touch targets >= 44px en móvil */
+  @media (pointer: coarse) {
+    button,
+    [role='button'],
+    input,
+    select {
+      min-height: 44px;
+    }
+  }
+}

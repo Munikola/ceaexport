@@ -1,0 +1,66 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: cea-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: cea
+      POSTGRES_PASSWORD: cea_dev_password
+      POSTGRES_DB: cea
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      # SQL inicial: se ejecuta solo la primera vez (volumen vacío).
+      # Para reiniciar: docker compose down -v && docker compose up -d db
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./db/seeds.sql:/docker-entrypoint-initdb.d/02-seeds.sql:ro
+      - ./db/views.sql:/docker-entrypoint-initdb.d/03-views.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cea -d cea"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: cea-backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+psycopg://cea:cea_dev_password@db:5432/cea
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-me-in-prod}
+      JWT_ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 60
+      REFRESH_TOKEN_EXPIRE_DAYS: 30
+      CORS_ORIGINS: http://localhost:5173,http://localhost:3000
+      ENV: development
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: cea-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      VITE_API_URL: http://localhost:8000
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: npm run dev -- --host 0.0.0.0
+
+volumes:
+  db-data:
