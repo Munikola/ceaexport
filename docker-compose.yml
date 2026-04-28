@@ -8,7 +8,9 @@ services:
       POSTGRES_PASSWORD: cea_dev_password
       POSTGRES_DB: cea
     ports:
-      - "5432:5432"
+      # Host:5433 → container:5432. El 5432 del host está ocupado por una
+      # Postgres nativa ajena al proyecto.
+      - "5433:5432"
     volumes:
       - db-data:/var/lib/postgresql/data
       # SQL inicial: se ejecuta solo la primera vez (volumen vacío).

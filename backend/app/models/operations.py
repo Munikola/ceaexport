@@ -3,12 +3,14 @@ from datetime import date, datetime, time
 from decimal import Decimal
 
 from sqlalchemy import (
+    Column,
     Date,
     DateTime,
     ForeignKey,
     Integer,
     Numeric,
     String,
+    Table,
     Text,
     Time,
 )
@@ -27,6 +29,15 @@ from app.models.catalogs import (
     Supplier,
     Treater,
     Truck,
+)
+
+
+# ── Tabla puente M:N lote ↔ tratador (sin columnas extra → Table directo) ──
+lot_treaters_table = Table(
+    "lot_treaters",
+    Base.metadata,
+    Column("lot_id", Integer, ForeignKey("lots.lot_id", ondelete="CASCADE"), primary_key=True),
+    Column("treater_id", Integer, ForeignKey("treaters.treater_id"), primary_key=True),
 )
 
 
@@ -64,7 +75,7 @@ class Lot(Base):
     lot_category: Mapped[LotCategory | None] = relationship(lazy="joined")
     chemical: Mapped[Chemical | None] = relationship(lazy="joined")
     treaters: Mapped[list[Treater]] = relationship(
-        secondary="lot_treaters", lazy="selectin"
+        secondary=lot_treaters_table, lazy="selectin"
     )
 
 

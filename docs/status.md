@@ -1,7 +1,38 @@
 # Estado del proyecto — handoff
 
-**Última sesión:** 2026-04-28
-**Próxima:** retomar desde aquí.
+**Última sesión:** 2026-04-28 (la prueba end-to-end se interrumpió a mitad).
+**Próxima:** retomar la prueba desde el punto donde se paró.
+
+## Cómo retomar la prueba (paso por paso)
+
+Todo está configurado y guardado. La DB y el backend están parados. Para retomar:
+
+```powershell
+# 1. Asegúrate de que Docker Desktop esté arrancado.
+
+# 2. Levantar la BD (los datos persisten — el admin sigue creado):
+cd C:\Users\imugarza.BIOLANMB\Documents\GitHub\ceaexport
+docker compose start db
+
+# 3. Arrancar backend (en una terminal):
+cd backend
+.venv\Scripts\activate
+uvicorn app.main:app --reload
+
+# 4. Arrancar frontend (en OTRA terminal):
+cd C:\Users\imugarza.BIOLANMB\Documents\GitHub\ceaexport\frontend
+npm install     # solo la primera vez
+npm run dev
+
+# 5. Abrir http://localhost:5173 en el navegador
+#    Login: admin@cea.com  /  Cea2026Test!
+```
+
+**Notas importantes para no tropezar otra vez:**
+- El puerto de la BD Docker es **5433** (el 5432 está ocupado por otra Postgres tuya, ajena al proyecto).
+- El admin **ya está creado** en la BD. NO vuelvas a correr el bootstrap.
+- Password admin: `Cea2026Test!` (con la C mayúscula, la t mayúscula, y el ! al final).
+- El bug de SQLAlchemy de la tabla `lot_treaters` ya está corregido en el código.
 
 ## Qué hay hecho
 
