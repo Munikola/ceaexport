@@ -203,6 +203,7 @@ SELECT
     MIN(r.reception_date)     AS reception_date,
     MIN(r.arrival_time)       AS arrival_time,
     p.plant_name              AS planta,
+    p.plant_id,
     EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - MIN(r.created_at))) / 3600 AS hours_since_reception
 FROM lots l
 JOIN reception_lots         rl ON l.lot_id = rl.lot_id
@@ -217,8 +218,68 @@ WHERE NOT EXISTS (
     WHERE al.lot_id = l.lot_id AND qa.status IN ('validado', 'rechazado')
 )
 GROUP BY l.lot_id, l.lot_code, l.lot_year, s.supplier_name, o.origin_name,
-         pn.pond_code, l.product_type, p.plant_name
+         pn.pond_code, l.product_type, p.plant_name, p.plant_id
 ORDER BY MIN(r.reception_date), MIN(r.arrival_time);
+
+-- =============================================================================
+-- v_lot_board
+-- Tablero general: TODOS los lotes con su último análisis (si existe)
+-- y un estado computado (pendiente/en_analisis/liberado/rechazado).
+-- =============================================================================
+CREATE OR REPLACE VIEW v_lot_board AS
+WITH latest_analysis AS (
+    SELECT DISTINCT ON (al.lot_id)
+        al.lot_id,
+        qa.analysis_id,
+        qa.status AS analysis_status,
+        qa.analysis_date,
+        qa.created_at AS analysis_created_at,
+        d.decision_name,
+        d.is_approval,
+        d.is_rejection
+    FROM analysis_lots al
+    JOIN quality_analyses qa ON al.analysis_id = qa.analysis_id
+    LEFT JOIN decisions d ON qa.decision_id = d.decision_id
+    ORDER BY al.lot_id, qa.created_at DESC
+)
+SELECT
+    l.lot_id,
+    l.lot_code,
+    l.lot_year,
+    s.supplier_name,
+    o.origin_name,
+    pn.pond_code              AS psc,
+    l.product_type,
+    SUM(rl.received_lbs)      AS total_lbs,
+    MIN(r.reception_date)     AS reception_date,
+    MIN(r.arrival_time)       AS arrival_time,
+    p.plant_name              AS planta,
+    p.plant_id,
+    EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - MIN(r.created_at))) / 3600
+                              AS hours_since_reception,
+    la.analysis_id,
+    la.analysis_status,
+    la.analysis_date,
+    la.decision_name,
+    CASE
+        WHEN la.analysis_id IS NULL                            THEN 'pendiente'
+        WHEN la.analysis_status IN ('borrador', 'en_revision') THEN 'en_analisis'
+        WHEN la.analysis_status = 'validado'                   THEN 'liberado'
+        WHEN la.analysis_status = 'rechazado'                  THEN 'rechazado'
+        ELSE la.analysis_status::text
+    END AS board_state
+FROM lots l
+JOIN reception_lots         rl ON l.lot_id = rl.lot_id
+JOIN receptions             r  ON rl.reception_id = r.reception_id
+LEFT JOIN suppliers         s  ON l.supplier_id = s.supplier_id
+LEFT JOIN origins           o  ON l.origin_id   = o.origin_id
+LEFT JOIN ponds             pn ON l.pond_id     = pn.pond_id
+LEFT JOIN plants            p  ON r.plant_id    = p.plant_id
+LEFT JOIN latest_analysis   la ON l.lot_id      = la.lot_id
+GROUP BY l.lot_id, l.lot_code, l.lot_year, s.supplier_name, o.origin_name,
+         pn.pond_code, l.product_type, p.plant_name, p.plant_id,
+         la.analysis_id, la.analysis_status, la.analysis_date, la.decision_name
+ORDER BY MIN(r.reception_date) DESC, MIN(r.arrival_time) DESC;
 
 -- =============================================================================
 -- v_histogram_summary
