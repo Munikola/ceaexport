@@ -659,7 +659,7 @@ function Section({
 
 // Input principal (formulario): borde claro pero presente, fondo blanco, foco visible.
 const INPUT =
-  'w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm font-medium text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 hover:border-slate-400 focus:border-cea-500 focus:ring-2 focus:ring-cea-500/30'
+  'w-full rounded-md border border-slate-300 bg-white px-2.5 py-1 text-sm font-medium text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 hover:border-slate-400 focus:border-cea-500 focus:ring-2 focus:ring-cea-500/30'
 
 // Input compacto para celdas de tabla: relleno gris suave para que se vea siempre.
 const CELL_INPUT =
@@ -676,11 +676,11 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500">
+      <span className="mb-0.5 block text-[10px] font-medium uppercase tracking-wide text-slate-500">
         {label}
       </span>
       {children}
-      {hint && <span className="mt-1 block text-xs text-slate-400">{hint}</span>}
+      {hint && <span className="mt-0.5 block text-[10px] text-slate-400">{hint}</span>}
     </label>
   )
 }
@@ -724,7 +724,7 @@ function SectionCabecera({
 }) {
   return (
     <Section id="general" title="Datos generales" icon={ClipboardCheck}>
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
         <Field label="Planta">
           <CatalogSelect
             catalog="plants"
@@ -749,7 +749,7 @@ function SectionCabecera({
                   key={t}
                   type="button"
                   onClick={() => update({ shift: t })}
-                  className={`flex-1 rounded-lg border px-3 py-2.5 text-sm font-semibold transition ${
+                  className={`flex-1 rounded-md border px-3 py-1 text-sm font-semibold transition ${
                     selected
                       ? 'has-value'
                       : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
@@ -1234,18 +1234,8 @@ function SectionMuestreos({
     updateSampling(idx, { defects: next })
   }
 
-  // Cálculos auto: piezas totales sumadas y total defectos (suma de %)
+  // Cálculo auto: piezas totales sumadas (para el banner de cabecera)
   const totalPiezas = form.samplings.reduce((a, s) => a + (s.units_count ?? 0), 0)
-  const totalDefectos = form.samplings.reduce(
-    (a, s) =>
-      a +
-      s.defects.reduce(
-        (b, d) => b + Number(d.percentage ?? d.units_count ?? 0),
-        0,
-      ),
-    0,
-  )
-  const pctTotal = totalPiezas > 0 ? (totalDefectos / totalPiezas) * 100 : 0
 
   // Reparte defectos preimpresos en dos columnas (mitad / mitad)
   const halfP = Math.ceil(paperDefects.length / 2)
@@ -1407,13 +1397,6 @@ function SectionMuestreos({
       </div>
     </Section>
   )
-}
-
-function pctTotalClass(pct: number): string {
-  if (pct >= 30) return 'font-bold text-red-700'
-  if (pct >= 15) return 'font-bold text-amber-700'
-  if (pct >= 5) return 'font-semibold text-amber-600'
-  return 'font-semibold text-emerald-700'
 }
 
 // Helper: añade clase `has-value` a un input cuando tiene valor — para resaltar
@@ -1659,7 +1642,7 @@ function SectionDecision({
       icon={ClipboardCheck}
       description="Un análisis no puede validarse sin decisión"
     >
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-2 lg:grid-cols-3">
         <Field label="Decisión">
           <div className="flex flex-wrap gap-1.5">
             {(decisions.data ?? [])

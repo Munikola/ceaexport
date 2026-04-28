@@ -38,7 +38,7 @@ export default function CatalogSelect({
         required={required}
         disabled={disabled || q.isLoading}
         onChange={(e) => onChange(e.target.value ? Number(e.target.value) : null)}
-        className={`w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-cea-500 focus:ring-2 focus:ring-cea-500/20 disabled:bg-slate-50 disabled:text-slate-400 ${value ? 'has-value' : ''}`}
+        className={`w-full rounded-md border border-slate-300 bg-white px-2.5 py-1 text-sm outline-none focus:border-cea-500 focus:ring-2 focus:ring-cea-500/20 disabled:bg-slate-50 disabled:text-slate-400 ${value ? 'has-value' : ''}`}
       >
         <option value="">{q.isLoading ? 'Cargando…' : placeholder}</option>
         {items.map((i) => (
