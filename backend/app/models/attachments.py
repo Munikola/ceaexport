@@ -31,9 +31,9 @@ class Attachment(Base):
     analysis_id: Mapped[int | None] = mapped_column(
         Integer, ForeignKey("quality_analyses.analysis_id", ondelete="SET NULL")
     )
-    histogram_id: Mapped[int | None] = mapped_column(
-        Integer, ForeignKey("lot_histograms.histogram_id", ondelete="SET NULL")
-    )
+    # FK a lot_histograms se mantiene en la BD (schema.sql) pero no aquí
+    # porque aún no tenemos modelo ORM de LotHistogram.
+    histogram_id: Mapped[int | None] = mapped_column(Integer)
     defect_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("defects.defect_id"))
 
     file_url: Mapped[str] = mapped_column(Text, nullable=False)

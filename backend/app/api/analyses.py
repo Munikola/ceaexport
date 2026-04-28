@@ -126,13 +126,22 @@ def get_lot_context(
             SELECT
                 r.reception_id, r.reception_date, r.arrival_time,
                 rl.delivery_index, rl.received_lbs, rl.boxes_count, rl.bins_count,
-                r.arrival_temperature,
-                t.plate_number, d.full_name AS driver_name, lc.company_name AS logistics_name
+                r.arrival_temperature, r.remission_guide_number, r.warranty_letter_number,
+                r.observations,
+                t.plate_number, d.full_name AS driver_name, lc.company_name AS logistics_name,
+                pl.plant_name,
+                tc.condition_name AS truck_condition,
+                ic.condition_name AS ice_condition,
+                hc.condition_name AS hygiene_condition
             FROM reception_lots rl
-            JOIN receptions r  ON rl.reception_id = r.reception_id
-            LEFT JOIN trucks            t  ON r.truck_id = t.truck_id
-            LEFT JOIN drivers           d  ON r.driver_id = d.driver_id
+            JOIN receptions r ON rl.reception_id = r.reception_id
+            LEFT JOIN trucks              t  ON r.truck_id = t.truck_id
+            LEFT JOIN drivers             d  ON r.driver_id = d.driver_id
             LEFT JOIN logistics_companies lc ON r.logistics_company_id = lc.logistics_company_id
+            LEFT JOIN plants              pl ON r.plant_id = pl.plant_id
+            LEFT JOIN condition_levels    tc ON r.truck_condition_id   = tc.condition_id
+            LEFT JOIN condition_levels    ic ON r.ice_condition_id     = ic.condition_id
+            LEFT JOIN condition_levels    hc ON r.hygiene_condition_id = hc.condition_id
             WHERE rl.lot_id = :lid
             ORDER BY rl.delivery_index, r.reception_date, r.arrival_time
             """

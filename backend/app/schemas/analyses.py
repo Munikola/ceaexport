@@ -50,6 +50,7 @@ class LotBoardRow(BaseModel):
     analyst_id: int | None = None
     analyst_name: str | None = None
     decision_name: str | None = None
+    attachment_count: int = 0
     board_state: str
 
 
@@ -66,6 +67,14 @@ class LotReceptionInfo(BaseModel):
     received_lbs: Decimal | None = None
     boxes_count: int | None = None
     bins_count: int | None = None
+    # Detalles para el modal "ver recepción"
+    plant_name: str | None = None
+    remission_guide_number: str | None = None
+    warranty_letter_number: str | None = None
+    truck_condition: str | None = None
+    ice_condition: str | None = None
+    hygiene_condition: str | None = None
+    observations: str | None = None
 
 
 class LotContext(BaseModel):
