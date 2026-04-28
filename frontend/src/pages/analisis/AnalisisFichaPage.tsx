@@ -370,17 +370,38 @@ export default function AnalisisFichaPage() {
       )}
 
       <main className="mx-auto max-w-6xl space-y-6 px-4 py-6">
+        {/* Toolbar de acciones — fuera del fieldset para que siga funcionando
+            aunque el formulario esté en modo lectura. */}
+        {ctx && (
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            {ctx.product_type && (
+              <span className="mr-auto inline-flex items-center gap-1 rounded-lg border border-orange-200 bg-orange-50 px-3 py-2 text-xs font-bold uppercase tracking-wider text-orange-800 shadow-sm">
+                <span className="text-[10px] font-medium normal-case text-orange-600">
+                  Producto:
+                </span>
+                {ctx.product_type}
+              </span>
+            )}
+            <ActionButton
+              icon={Truck}
+              label="Datos recepción"
+              onClick={() => setRecepcionModalOpen(true)}
+              variant="cea"
+            />
+            <ActionButton
+              icon={ImageIcon}
+              label="Fotos y archivos"
+              onClick={() => setFotosModalOpen(true)}
+              variant="violet"
+            />
+          </div>
+        )}
+
         <fieldset
           disabled={!isEditing}
           className="space-y-6 transition disabled:cursor-default disabled:opacity-95"
         >
-        <SectionCabecera
-          form={form}
-          update={update}
-          onVerRecepcion={ctx ? () => setRecepcionModalOpen(true) : undefined}
-          onVerFotos={ctx ? () => setFotosModalOpen(true) : undefined}
-          productType={ctx?.product_type}
-        />
+        <SectionCabecera form={form} update={update} />
         <SectionFisicos form={form} update={update} />
         <div className="grid gap-6 md:grid-cols-2">
           <SectionOrganoleptico title="Crudo" id="crudo" state="crudo" form={form} update={update} />
@@ -697,50 +718,12 @@ function NumInput({
 function SectionCabecera({
   form,
   update,
-  onVerRecepcion,
-  onVerFotos,
-  productType,
 }: {
   form: AnalysisUpsert
   update: (p: Partial<AnalysisUpsert>) => void
-  onVerRecepcion?: () => void
-  onVerFotos?: () => void
-  productType?: string | null
 }) {
   return (
-    <Section
-      id="general"
-      title="Datos generales"
-      icon={ClipboardCheck}
-      action={
-        <div className="flex items-center gap-2">
-          {productType && (
-            <span className="inline-flex items-center gap-1 rounded-lg border border-orange-200 bg-orange-50 px-3 py-2 text-xs font-bold uppercase tracking-wider text-orange-800 shadow-sm">
-              <span className="text-[10px] font-medium normal-case text-orange-600">
-                Producto:
-              </span>
-              {productType}
-            </span>
-          )}
-          {onVerRecepcion && (
-            <ActionButton
-              icon={Truck}
-              label="Datos recepción"
-              onClick={onVerRecepcion}
-              variant="cea"
-            />
-          )}
-          {onVerFotos && (
-            <ActionButton
-              icon={ImageIcon}
-              label="Fotos y archivos"
-              onClick={onVerFotos}
-              variant="violet"
-            />
-          )}
-        </div>
-      }
-    >
+    <Section id="general" title="Datos generales" icon={ClipboardCheck}>
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
         <Field label="Planta">
           <CatalogSelect
