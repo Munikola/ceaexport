@@ -17,11 +17,18 @@ from app.core.db import get_db
 from app.core.security import CurrentUser
 from app.models.auth import Role
 from app.models.catalogs import (
+    CcClassification,
     Chemical,
+    Color,
     ConditionLevel,
+    Decision,
+    Defect,
     Driver,
+    Flavor,
+    Intensity,
     LogisticsCompany,
     LotCategory,
+    Odor,
     Origin,
     Plant,
     Pond,
@@ -82,6 +89,20 @@ CATALOGS: dict[str, CatalogConfig] = {
                                            ["condition_code"], type_filter="ice"),
     "condition-levels-hygiene": CatalogConfig(ConditionLevel, "condition_id", "condition_name",
                                                ["condition_code"], type_filter="hygiene"),
+    # ── Catálogos analíticos (R-CC-001) — read-only, definidos por calidad ──
+    "colors": CatalogConfig(Color, "color_id", "color_name",
+                             ["color_code", "color_grade", "color_modifier", "sort_order"]),
+    "flavors": CatalogConfig(Flavor, "flavor_id", "flavor_name", ["is_default"]),
+    "intensities": CatalogConfig(Intensity, "intensity_id", "intensity_name",
+                                  ["intensity_code", "sort_order"]),
+    "odors": CatalogConfig(Odor, "odor_id", "odor_name", ["is_default"]),
+    "defects": CatalogConfig(Defect, "defect_id", "defect_name",
+                              ["defect_code", "defect_category", "in_paper_form", "sort_order"]),
+    "decisions": CatalogConfig(Decision, "decision_id", "decision_name",
+                                ["decision_code", "is_approval", "is_rejection",
+                                 "requires_action", "sort_order"]),
+    "cc-classifications": CatalogConfig(CcClassification, "cc_classification_id", "range_code",
+                                         ["min_count", "max_count", "sort_order"]),
 }
 
 

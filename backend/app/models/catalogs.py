@@ -122,3 +122,82 @@ class SupplyType(Base):
     supply_name: Mapped[str] = mapped_column(String(100), nullable=False)
     default_unit: Mapped[str | None] = mapped_column(String(20))
     active: Mapped[bool] = mapped_column(Boolean, default=True)
+
+
+# ── Catálogos analíticos (R-CC-001) ──────────────────────────────────
+
+class Color(Base):
+    __tablename__ = "colors"
+
+    color_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    color_code: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
+    color_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    color_grade: Mapped[str | None] = mapped_column(String(10))
+    color_modifier: Mapped[str | None] = mapped_column(String(50))
+    sort_order: Mapped[int | None] = mapped_column(Integer)
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
+
+
+class Flavor(Base):
+    __tablename__ = "flavors"
+
+    flavor_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    flavor_name: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
+    is_default: Mapped[bool] = mapped_column(Boolean, default=False)
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
+
+
+class Intensity(Base):
+    __tablename__ = "intensities"
+
+    intensity_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    intensity_code: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
+    intensity_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    sort_order: Mapped[int | None] = mapped_column(Integer)
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
+
+
+class Odor(Base):
+    __tablename__ = "odors"
+
+    odor_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    odor_name: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
+    is_default: Mapped[bool] = mapped_column(Boolean, default=False)
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
+
+
+class Defect(Base):
+    __tablename__ = "defects"
+
+    defect_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    defect_code: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
+    defect_name: Mapped[str] = mapped_column(String(150), nullable=False)
+    defect_category: Mapped[str | None] = mapped_column(String(50))
+    in_paper_form: Mapped[bool] = mapped_column(Boolean, default=False)
+    in_legacy_excel: Mapped[bool] = mapped_column(Boolean, default=False)
+    sort_order: Mapped[int | None] = mapped_column(Integer)
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
+
+
+class Decision(Base):
+    __tablename__ = "decisions"
+
+    decision_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    decision_code: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
+    decision_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    is_approval: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_rejection: Mapped[bool] = mapped_column(Boolean, default=False)
+    requires_action: Mapped[bool] = mapped_column(Boolean, default=False)
+    sort_order: Mapped[int | None] = mapped_column(Integer)
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
+
+
+class CcClassification(Base):
+    __tablename__ = "cc_classifications"
+
+    cc_classification_id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    range_code: Mapped[str] = mapped_column(String(20), unique=True, nullable=False)
+    min_count: Mapped[int | None] = mapped_column(Integer)
+    max_count: Mapped[int | None] = mapped_column(Integer)
+    sort_order: Mapped[int | None] = mapped_column(Integer)
+    active: Mapped[bool] = mapped_column(Boolean, default=True)

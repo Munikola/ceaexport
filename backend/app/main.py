@@ -1,10 +1,12 @@
 """Entry point de la API FastAPI."""
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
-from app.api import admin, auth, catalogs, public, receptions
+from app.api import admin, analyses, attachments, auth, catalogs, public, receptions
 from app.core.config import get_settings
 
 settings = get_settings()
@@ -52,8 +54,14 @@ app.include_router(admin.router, prefix="/api")
 app.include_router(public.router, prefix="/api")
 app.include_router(catalogs.router, prefix="/api")
 app.include_router(receptions.router, prefix="/api")
+app.include_router(analyses.router, prefix="/api")
+app.include_router(attachments.router, prefix="/api")
+
+# Servir ficheros subidos (uploads/<lot_id>/<uuid>.<ext>) como estático
+_uploads = Path(settings.upload_dir).resolve()
+_uploads.mkdir(parents=True, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=str(_uploads)), name="uploads")
 
 # TODO siguientes routers:
-# from app.api import lots, analyses, histograms
-# app.include_router(analyses.router, prefix="/api/analyses", tags=["analyses"])
+# from app.api import lots, histograms
 # app.include_router(histograms.router, prefix="/api/histograms", tags=["histograms"])

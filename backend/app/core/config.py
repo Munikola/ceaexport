@@ -26,6 +26,10 @@ class Settings(BaseSettings):
     # Entorno
     env: str = Field("development", alias="ENV")
 
+    # Almacenamiento de attachments (relativo al backend)
+    upload_dir: str = Field("uploads", alias="UPLOAD_DIR")
+    upload_max_mb: int = Field(50, alias="UPLOAD_MAX_MB")
+
     @property
     def cors_origins_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]

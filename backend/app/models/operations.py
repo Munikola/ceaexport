@@ -6,6 +6,7 @@ from sqlalchemy import (
     Column,
     Date,
     DateTime,
+    Enum as SAEnum,
     ForeignKey,
     Integer,
     Numeric,
@@ -14,6 +15,11 @@ from sqlalchemy import (
     Text,
     Time,
 )
+
+
+# Postgres ENUM types ya creados por db/schema.sql. `create_type=False` evita
+# que SQLAlchemy intente recrearlos.
+PRODUCT_TYPE_ENUM = SAEnum("ENTERO", "COLA", name="product_type", create_type=False)
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -58,8 +64,7 @@ class Lot(Base):
         Integer, ForeignKey("lot_categories.lot_category_id")
     )
 
-    # ENUM en Postgres: ENTERO / COLA. SQLAlchemy lo trata como String simple.
-    product_type: Mapped[str | None] = mapped_column(String(20))
+    product_type: Mapped[str | None] = mapped_column(PRODUCT_TYPE_ENUM)
     fishing_date: Mapped[date | None] = mapped_column(Date)
     chemical_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("chemicals.chemical_id"))
     observations: Mapped[str | None] = mapped_column(Text)
