@@ -397,6 +397,26 @@ def create_analysis(
     return _read(db, qa)
 
 
+@router.delete("/{analysis_id}", status_code=204)
+def delete_analysis(
+    analysis_id: int,
+    user: CurrentUser,
+    db: Annotated[Session, Depends(get_db)],
+):
+    """Borra el análisis (y por cascada todas sus secciones)."""
+    _ensure_can_create(user)
+    qa = db.get(QualityAnalysis, analysis_id)
+    if not qa:
+        raise HTTPException(status_code=404, detail="Análisis no encontrado")
+    db.delete(qa)
+    try:
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=f"Error al eliminar: {e}") from e
+    return None
+
+
 @router.put("/{analysis_id}", response_model=AnalysisRead)
 def update_analysis(
     analysis_id: int,

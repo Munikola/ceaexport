@@ -1,7 +1,15 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft, ClipboardList, Clock, Image as ImageIcon, Package, Search } from 'lucide-react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  ArrowLeft,
+  ClipboardList,
+  Clock,
+  Image as ImageIcon,
+  Package,
+  Search,
+  Trash2,
+} from 'lucide-react'
 import { api } from '../../api/client'
 import LotPhotosModal from '../../components/LotPhotosModal'
 import type { BoardState, LotBoardRow } from '../../types/domain'
@@ -21,9 +29,15 @@ const TABS: TabDef[] = [
 
 export default function BandejaAnalisisPage() {
   const navigate = useNavigate()
+  const qc = useQueryClient()
   const [activeTab, setActiveTab] = useState<TabDef['state']>('todos')
   const [filter, setFilter] = useState('')
   const [photosLot, setPhotosLot] = useState<{ id: number; code: string } | null>(null)
+
+  const removeAnalysis = useMutation({
+    mutationFn: async (id: number) => api.delete(`/api/analyses/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['analyses', 'board'] }),
+  })
 
   const q = useQuery({
     queryKey: ['analyses', 'board'],
@@ -233,15 +247,36 @@ export default function BandejaAnalisisPage() {
                         '—'}
                     </td>
                     <td className="px-4 py-3 pr-6 text-right">
-                      {row.board_state === 'pendiente' && (
-                        <span className="mr-3 inline-flex items-center gap-1 text-xs text-amber-700">
-                          <Clock className="h-3 w-3" />
-                          {(row.hours_since_reception ?? 0).toFixed(1)} h
+                      <div className="flex items-center justify-end gap-2">
+                        {row.board_state === 'pendiente' && (
+                          <span className="inline-flex items-center gap-1 text-xs text-amber-700">
+                            <Clock className="h-3 w-3" />
+                            {(row.hours_since_reception ?? 0).toFixed(1)} h
+                          </span>
+                        )}
+                        {row.analysis_id && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              if (
+                                window.confirm(
+                                  `¿Eliminar el análisis del lote ${row.lot_code}? Se borrarán todos sus datos.`,
+                                )
+                              ) {
+                                removeAnalysis.mutate(row.analysis_id!)
+                              }
+                            }}
+                            title="Eliminar análisis"
+                            className="rounded-md border border-red-200 bg-red-50 p-1.5 text-red-700 transition hover:border-red-400 hover:bg-red-100"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                        <span className="inline-flex items-center gap-1 rounded-lg border border-cea-300 bg-cea-50 px-4 py-1.5 text-xs font-semibold text-cea-800 shadow-sm transition group-hover:border-cea-500 group-hover:bg-cea-100">
+                          Abrir →
                         </span>
-                      )}
-                      <span className="inline-flex items-center gap-1 rounded-lg border border-cea-300 bg-cea-50 px-4 py-1.5 text-xs font-semibold text-cea-800 shadow-sm transition group-hover:border-cea-500 group-hover:bg-cea-100">
-                        Abrir →
-                      </span>
+                      </div>
                     </td>
                   </tr>
                 ))}

@@ -14,6 +14,7 @@ import {
   Thermometer,
   ListChecks,
   BarChart3,
+  Trash2,
   Truck,
   Snowflake,
   X as XIcon,
@@ -143,6 +144,30 @@ export default function AnalisisFichaPage() {
       navigate('/analisis')
     },
   })
+
+  const removeMutation = useMutation({
+    mutationFn: async () => {
+      if (!analysisId) return
+      await api.delete(`/api/analyses/${analysisId}`)
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['analyses', 'pending'] })
+      qc.invalidateQueries({ queryKey: ['analyses', 'board'] })
+      navigate('/analisis')
+    },
+  })
+
+  const handleDelete = () => {
+    if (!analysisId) return
+    if (
+      !window.confirm(
+        '¿Eliminar este análisis? Esta acción no se puede deshacer. ' +
+          'Se borrarán todos sus datos (defectos, organoléptico, mini-histograma, archivos…).',
+      )
+    )
+      return
+    removeMutation.mutate()
+  }
 
   const startEdit = () => {
     setSnapshot({ ...form })
@@ -379,6 +404,8 @@ export default function AnalisisFichaPage() {
           update={update}
           onVerRecepcion={ctx ? () => setRecepcionModalOpen(true) : undefined}
           onVerFotos={ctx ? () => setFotosModalOpen(true) : undefined}
+          onDelete={analysisId ? handleDelete : undefined}
+          productType={ctx?.product_type}
         />
         <SectionFisicos form={form} update={update} />
         <div className="grid gap-6 md:grid-cols-2">
@@ -698,11 +725,15 @@ function SectionCabecera({
   update,
   onVerRecepcion,
   onVerFotos,
+  onDelete,
+  productType,
 }: {
   form: AnalysisUpsert
   update: (p: Partial<AnalysisUpsert>) => void
   onVerRecepcion?: () => void
   onVerFotos?: () => void
+  onDelete?: () => void
+  productType?: string | null
 }) {
   return (
     <Section
@@ -711,6 +742,14 @@ function SectionCabecera({
       icon={ClipboardCheck}
       action={
         <div className="flex items-center gap-2">
+          {productType && (
+            <span className="inline-flex items-center gap-1 rounded-lg border border-orange-200 bg-orange-50 px-3 py-2 text-xs font-bold uppercase tracking-wider text-orange-800 shadow-sm">
+              <span className="text-[10px] font-medium normal-case text-orange-600">
+                Producto:
+              </span>
+              {productType}
+            </span>
+          )}
           {onVerRecepcion && (
             <ActionButton
               icon={Truck}
@@ -726,6 +765,18 @@ function SectionCabecera({
               onClick={onVerFotos}
               variant="violet"
             />
+          )}
+          {onDelete && (
+            <button
+              type="button"
+              onClick={onDelete}
+              className="group inline-flex items-center gap-2 rounded-lg border border-red-200 bg-gradient-to-b from-red-50 to-white px-3.5 py-2 text-xs font-semibold uppercase tracking-wider text-red-700 shadow-sm ring-1 ring-slate-900/5 transition hover:-translate-y-px hover:border-red-400 hover:from-red-100 hover:text-red-900 hover:shadow-md active:translate-y-0"
+            >
+              <span className="flex h-5 w-5 items-center justify-center rounded-md bg-red-100 text-red-700 ring-1 ring-red-200 transition group-hover:bg-red-600 group-hover:text-white group-hover:ring-red-700">
+                <Trash2 className="h-3.5 w-3.5" strokeWidth={2.5} />
+              </span>
+              <span className="hidden sm:inline">Eliminar</span>
+            </button>
           )}
         </div>
       }
