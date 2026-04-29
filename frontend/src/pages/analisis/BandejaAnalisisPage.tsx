@@ -2,7 +2,10 @@ import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
+  ArrowDown,
   ArrowLeft,
+  ArrowUp,
+  ArrowUpDown,
   ClipboardList,
   Clock,
   Image as ImageIcon,
@@ -36,6 +39,31 @@ export default function BandejaAnalisisPage() {
   const [confirmDelete, setConfirmDelete] = useState<
     { analysisId: number; lotCode: string } | null
   >(null)
+
+  type SortKey =
+    | 'lot_code'
+    | 'reception_date'
+    | 'product_type'
+    | 'supplier_name'
+    | 'board_state'
+    | 'analyst_name'
+    | 'attachment_count'
+    | 'total_lbs'
+  const [sortBy, setSortBy] = useState<SortKey>('reception_date')
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
+
+  const toggleSort = (key: SortKey) => {
+    if (sortBy === key) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
+    else {
+      setSortBy(key)
+      // Para fechas/cantidades por defecto descendente; para textos ascendente
+      setSortDir(
+        ['reception_date', 'attachment_count', 'total_lbs'].includes(key)
+          ? 'desc'
+          : 'asc',
+      )
+    }
+  }
 
   const removeAnalysis = useMutation({
     mutationFn: async (id: number) => api.delete(`/api/analyses/${id}`),
@@ -73,8 +101,21 @@ export default function BandejaAnalisisPage() {
           (r.origin_name ?? '').toLowerCase().includes(f),
       )
     }
-    return list
-  }, [q.data, activeTab, filter])
+    // Ordenar
+    const sorted = [...list].sort((a, b) => {
+      const av = a[sortBy]
+      const bv = b[sortBy]
+      // null/undefined al final
+      if (av == null && bv == null) return 0
+      if (av == null) return 1
+      if (bv == null) return -1
+      let cmp = 0
+      if (typeof av === 'number' && typeof bv === 'number') cmp = av - bv
+      else cmp = String(av).localeCompare(String(bv), 'es', { numeric: true })
+      return sortDir === 'asc' ? cmp : -cmp
+    })
+    return sorted
+  }, [q.data, activeTab, filter, sortBy, sortDir])
 
   const open = (row: LotBoardRow) => {
     if (row.analysis_id) navigate(`/analisis/${row.analysis_id}`)
@@ -84,7 +125,7 @@ export default function BandejaAnalisisPage() {
   return (
     <div className="min-h-screen bg-slate-50">
       <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
           <button
             onClick={() => navigate('/')}
             className="flex items-center gap-1 text-sm text-slate-600 hover:text-slate-900"
@@ -93,15 +134,15 @@ export default function BandejaAnalisisPage() {
           </button>
           <h1 className="flex items-center gap-2 text-base font-semibold">
             <ClipboardList className="h-4 w-4 text-emerald-700" />
-            Muestras de lotes
+            Muestras
           </h1>
           <div className="w-16" />
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-4 py-6">
+      <main className="mx-auto max-w-7xl px-4 py-6">
         <div className="mb-4">
-          <h2 className="text-2xl font-bold text-slate-900">Muestras de lotes</h2>
+          <h2 className="text-2xl font-bold text-slate-900">Muestras</h2>
           <p className="text-sm text-slate-500">
             Pulsa una fila para abrir su ficha de análisis.
           </p>
@@ -172,18 +213,21 @@ export default function BandejaAnalisisPage() {
 
         {q.data && rows.length > 0 && (
           <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <table className="w-full min-w-[920px] text-sm">
+            <table className="w-full min-w-[1000px] text-sm">
               <thead className="bg-slate-100 text-left text-xs uppercase tracking-wider text-slate-600">
                 <tr>
-                  <th className="px-4 py-3 font-semibold">Código</th>
-                  <th className="px-4 py-3 font-semibold">Recepción</th>
-                  <th className="px-4 py-3 font-semibold">Producto</th>
-                  <th className="px-4 py-3 font-semibold">Origen</th>
-                  <th className="px-4 py-3 font-semibold">Estado</th>
-                  <th className="px-4 py-3 font-semibold">Analista</th>
-                  <th className="px-3 py-3 text-center font-semibold">Archivos</th>
-                  <th className="px-4 py-3 text-right font-semibold">Lbs</th>
-                  <th className="px-4 py-3 text-right">{/* acción */}</th>
+                  <SortTh sortBy={sortBy} sortDir={sortDir} k="lot_code" onClick={toggleSort}>Código</SortTh>
+                  <SortTh sortBy={sortBy} sortDir={sortDir} k="reception_date" onClick={toggleSort}>Recepción</SortTh>
+                  <SortTh sortBy={sortBy} sortDir={sortDir} k="product_type" onClick={toggleSort}>Producto</SortTh>
+                  <SortTh sortBy={sortBy} sortDir={sortDir} k="supplier_name" onClick={toggleSort}>Origen</SortTh>
+                  <SortTh sortBy={sortBy} sortDir={sortDir} k="board_state" onClick={toggleSort}>Estado</SortTh>
+                  <SortTh sortBy={sortBy} sortDir={sortDir} k="analyst_name" onClick={toggleSort}>Analista</SortTh>
+                  <SortTh sortBy={sortBy} sortDir={sortDir} k="attachment_count" onClick={toggleSort} align="center">
+                    <ImageIcon className="h-4 w-4" />
+                    <span>Archivos</span>
+                  </SortTh>
+                  <SortTh sortBy={sortBy} sortDir={sortDir} k="total_lbs" onClick={toggleSort} align="right">Lbs</SortTh>
+                  <th className="px-4 py-4 text-right">{/* acción */}</th>
                 </tr>
               </thead>
               <tbody>
@@ -252,8 +296,8 @@ export default function BandejaAnalisisPage() {
                       {row.total_lbs?.toLocaleString('es-EC', { maximumFractionDigits: 0 }) ??
                         '—'}
                     </td>
-                    <td className="px-4 py-3 pr-6 text-right">
-                      <div className="flex items-center justify-end gap-2">
+                    <td className="w-[180px] whitespace-nowrap px-4 py-3 pr-6 text-right">
+                      <div className="flex items-center justify-end gap-2 whitespace-nowrap">
                         {row.board_state === 'pendiente' && (
                           <span className="inline-flex items-center gap-1 text-xs text-amber-700">
                             <Clock className="h-3 w-3" />
@@ -276,7 +320,7 @@ export default function BandejaAnalisisPage() {
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>
                         )}
-                        <span className="inline-flex items-center gap-1 rounded-lg border border-cea-300 bg-cea-50 px-4 py-1.5 text-xs font-semibold text-cea-800 shadow-sm transition group-hover:border-cea-500 group-hover:bg-cea-100">
+                        <span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-lg border border-cea-300 bg-cea-50 px-4 py-1.5 text-xs font-semibold text-cea-800 shadow-sm transition group-hover:border-cea-500 group-hover:bg-cea-100">
                           Abrir →
                         </span>
                       </div>
@@ -344,6 +388,44 @@ export default function BandejaAnalisisPage() {
         </div>
       )}
     </div>
+  )
+}
+
+function SortTh<K extends string>({
+  k,
+  sortBy,
+  sortDir,
+  onClick,
+  align = 'left',
+  children,
+}: {
+  k: K
+  sortBy: K
+  sortDir: 'asc' | 'desc'
+  onClick: (k: K) => void
+  align?: 'left' | 'center' | 'right'
+  children: React.ReactNode
+}) {
+  const active = sortBy === k
+  const Icon = active ? (sortDir === 'asc' ? ArrowUp : ArrowDown) : ArrowUpDown
+  const justify =
+    align === 'right' ? 'justify-end' : align === 'center' ? 'justify-center' : 'justify-start'
+  return (
+    <th className={`px-4 py-5 font-bold uppercase tracking-wider text-${align}`}>
+      <button
+        type="button"
+        onClick={() => onClick(k)}
+        className={`group inline-flex w-full items-center gap-1.5 ${justify} text-base ${
+          active ? 'text-cea-800' : 'text-slate-600 hover:text-cea-700'
+        }`}
+      >
+        <span>{children}</span>
+        <Icon
+          className={`h-4 w-4 transition ${active ? '' : 'opacity-30 group-hover:opacity-70'}`}
+          strokeWidth={2.5}
+        />
+      </button>
+    </th>
   )
 }
 

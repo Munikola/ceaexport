@@ -48,7 +48,7 @@ ceaexport/
 | Perfil (cambiar nombre/contraseña) | `/perfil` | ✅ |
 | Admin de usuarios (invitar, roles, deshabilitar) | `/admin/users` | ✅ |
 | **Recepción de camión** (single-page) | `/recepcion` | ✅ |
-| **Bandeja de muestras** (tabs por estado, búsqueda) | `/analisis` | ✅ |
+| **Muestras** (tabs por estado, búsqueda, columnas ordenables) | `/analisis` | ✅ |
 | **Ficha de análisis R-CC-001** (cabecera sticky + secciones) | `/analisis/lote/:lotId` o `/analisis/:analysisId` | ✅ |
 | Histograma R-CC-034 | `/histogramas` | 🚧 pendiente |
 | Búsqueda global de lote | `/buscar` | 🚧 pendiente |
@@ -56,11 +56,37 @@ ceaexport/
 
 ### Detalles de la ficha de análisis
 
-- Cabecera sticky con código de lote, badge de estado, tags, datos identificativos del lote y trazabilidad colapsable (entregas con placa, chofer, temperatura, lbs).
-- Toolbar destacado con Analista + Fecha de análisis + botón **Guardar resultados** (siempre a la vista).
-- Secciones: Datos generales · Datos físicos · Crudo · Cocido · Muestreos (1/2/3) · Distribución CC · Decisión · Fotos y archivos.
-- **Subida de fotos/videos** (drag & drop, preview, lightbox, borrar) por análisis.
-- Bandeja con tabs Todos / Pendientes / En análisis / Liberados / Rechazados con conteo en cada uno.
+- **Cabecera sticky** con lote, badge de estado, datos identificativos y trazabilidad colapsable (entregas con placa, chofer, temperatura, lbs).
+- **Toolbar de acciones** (siempre clicable) con pill de producto, botón **Datos recepción** (modal con detalles de cada entrega, condiciones, observaciones), botón **Fotos y archivos** (modal con drag & drop + lightbox), y botones **Editar / Cancelar / Guardar**.
+- **Modo lectura por defecto** en análisis existentes (todo dentro de un `<fieldset disabled>`); se desbloquea al pulsar Editar y se reactiva tras Guardar/Cancelar.
+- **Layout 2 columnas** en pantallas medianas+: Crudo y Cocido lado a lado, Datos físicos y Mini-histograma divididos en mitades, defectos en 2 sub-tablas.
+- **Inputs con dato → resaltado naranja muy suave** (clase `has-value`) — visible de un vistazo qué celdas están rellenas.
+- **Defectos en %**, sin spinners, con sufijo "%" inline y bandera por color del % global del Excel.
+- **% defectos global del Excel** editable a la derecha del header de Muestreos.
+- **Muestras** con tabs Todos / Pendientes / En análisis / Liberados / Rechazados con conteo, filtro por código/proveedor/procedencia, **columnas ordenables** (click en cualquier cabecera, default fecha de recepción descendente — más nuevas primero), icono-badge de archivos por lote y **botón Eliminar** con modal de confirmación personalizado.
+
+## Importar histórico desde el Excel
+
+El Excel `LOTES RECIBIDOS Y DETERMINACIÓN DE SULFITOS (V).xlsx` se carga con un script idempotente:
+
+```bash
+cd backend
+python -m scripts.import_excel "ruta/al/excel.xlsx"
+# Opciones útiles:
+#   --dry-run        # simula sin commitear
+#   --limit N        # solo las primeras N filas (probar)
+```
+
+El script:
+- Lee las 4 hojas (ENERO–ABRIL).
+- **Find-or-create** de catálogos: proveedores, procedencias, PSCs, logísticas, tratadores. Los nombres nuevos se crean automáticamente.
+- Soporta **multi-valor de SO₂** en una celda (1–3 lecturas separadas por espacio): cada lectura va a su muestreo (`analysis_samplings.so2_ppm`).
+- Defectos del Excel se guardan como `percentage` (no como cuenta de piezas, ya que el Excel los trae en %).
+- Status `borrador` por defecto; el % defectos global se calcula desde la suma de defectos individuales del Excel y se cuadra contra la columna "% defectos global".
+- "GERENCIA" como planta se trata como categoría de lote `gerencia` con planta default CEA DURÁN.
+- **Commit por fila**: un fallo no destruye lo importado antes (sin esto, un FK error a mitad rollback la transacción entera).
+
+Última corrida: **1236 lotes importados** (1414 filas en Excel, 160 vacías y 18 saltadas por filas inválidas). 5962 entradas de defectos, 1300 sabores y 1229 colores cargados.
 
 ## Empezar a desarrollar
 
@@ -147,6 +173,7 @@ GET    /api/analyses/by-lot/{lotId}       análisis vigente del lote (si existe)
 GET    /api/analyses/{id}                 ficha completa
 POST   /api/analyses                      crear (upsert atómico de secciones)
 PUT    /api/analyses/{id}                 actualizar (mientras no esté cerrado)
+DELETE /api/analyses/{id}                 borrar análisis y todo lo asociado (cascade)
 
 POST   /api/attachments                   multipart, asociado a lote/análisis/recepción
 GET    /api/attachments                   filtrar por ?lot_id|analysis_id|reception_id
