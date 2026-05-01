@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 import { AxiosError } from 'axios'
 import { Save, Truck, Snowflake, SprayCan, FileCheck, Thermometer, MapPin } from 'lucide-react'
@@ -22,8 +21,6 @@ function freshDefaults(): Partial<ReceptionCreate> {
 }
 
 export default function RecepcionPage() {
-  const navigate = useNavigate()
-
   const [reception, setReception] = useState<Partial<ReceptionCreate>>(freshDefaults)
   const [lots, setLots] = useState<Partial<LotInReceptionCreate>[]>([{}])
   const [lastSaved, setLastSaved] = useState<{ id: number; lotCount: number } | null>(null)
