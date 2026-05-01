@@ -100,23 +100,23 @@ export default function UsersPage() {
               {pendingInvitations.map((inv) => (
                 <div
                   key={inv.invitation_id}
-                  className="flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50 px-4 py-3"
+                  className="flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
                 >
-                  <div className="text-sm">
-                    <p className="font-medium text-slate-900">{inv.email}</p>
+                  <div className="min-w-0 text-sm">
+                    <p className="truncate font-medium text-slate-900">{inv.email}</p>
                     <p className="text-xs text-slate-600">
                       {inv.role.role_name} · expira{' '}
                       {new Date(inv.expires_at).toLocaleString('es')}
                     </p>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <button
                       onClick={() =>
                         copy(`${window.location.origin}/invitacion/${inv.token}`, 'Enlace copiado')
                       }
-                      className="rounded-lg bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                      className="flex items-center gap-1 rounded-lg bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
                     >
-                      <Copy className="mr-1 inline h-3 w-3" /> Copiar enlace
+                      <Copy className="h-3 w-3" /> <span>Copiar enlace</span>
                     </button>
                     <CancelInvitation
                       id={inv.invitation_id}
@@ -136,8 +136,8 @@ export default function UsersPage() {
           <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
             Usuarios ({usersQ.data?.length ?? 0})
           </h2>
-          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <table className="w-full text-sm">
+          <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <table className="w-full min-w-[640px] text-sm">
               <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
                 <tr>
                   <th className="px-4 py-3 text-left">Usuario</th>
@@ -169,8 +169,8 @@ export default function UsersPage() {
             <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
               Historial de invitaciones
             </h2>
-            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-              <table className="w-full text-sm">
+            <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
+              <table className="w-full min-w-[480px] text-sm">
                 <tbody className="divide-y divide-slate-100">
                   {historyInvitations.map((inv) => (
                     <tr key={inv.invitation_id} className="text-slate-500">
