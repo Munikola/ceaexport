@@ -79,6 +79,8 @@ tmp/
 # =============================================================================
 # Datos sensibles del proyecto (NO subir guías reales con datos personales)
 # =============================================================================
+1.docx
+documentos/
 documentos/originales/
 uploads/
 storage/
