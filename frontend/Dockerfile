@@ -10,8 +10,10 @@ WORKDIR /app
 ARG VITE_API_URL=""
 ENV VITE_API_URL=$VITE_API_URL
 
-COPY package.json package-lock.json ./
-RUN npm ci
+COPY package.json package-lock.json* ./
+# npm install (no ci) para tolerar pequeñas desincronizaciones de lockfile
+# entre la versión de npm que generó el lockfile (windows) y la del builder.
+RUN npm install --no-audit --no-fund
 
 COPY . .
 RUN npm run build
