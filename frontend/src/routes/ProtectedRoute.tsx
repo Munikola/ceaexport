@@ -1,8 +1,10 @@
-import { Navigate, useLocation } from 'react-router-dom'
+import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 
 interface Props {
-  children: React.ReactNode
+  /** Si se pasa, se renderiza el children. Si no, se renderiza un <Outlet/>
+   *  para usar la ruta como wrapper de rutas anidadas. */
+  children?: React.ReactNode
   /** Si se especifica, solo se permite a usuarios con uno de esos roles. */
   roles?: string[]
 }
@@ -36,5 +38,5 @@ export default function ProtectedRoute({ children, roles }: Props) {
     )
   }
 
-  return <>{children}</>
+  return <>{children ?? <Outlet />}</>
 }

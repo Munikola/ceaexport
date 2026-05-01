@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import ProtectedRoute from './routes/ProtectedRoute'
+import AppLayout from './layouts/AppLayout'
 import HomePage from './pages/HomePage'
 import LoginPage from './pages/auth/LoginPage'
 import AcceptInvitation from './pages/public/AcceptInvitation'
@@ -18,68 +19,36 @@ export default function App() {
   return (
     <AuthProvider>
       <Routes>
-        {/* Públicas */}
+        {/* Públicas (sin layout, sin TopNav) */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/invitacion/:token" element={<AcceptInvitation />} />
         <Route path="/reset/:token" element={<ResetPassword />} />
 
-        {/* Protegidas */}
+        {/* Privadas — todas envueltas en AppLayout (TopNav arriba en una fila) */}
         <Route
-          path="/"
           element={
             <ProtectedRoute>
-              <HomePage />
+              <AppLayout />
             </ProtectedRoute>
           }
-        />
-        <Route
-          path="/perfil"
-          element={
-            <ProtectedRoute>
-              <ProfilePage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/users"
-          element={
-            <ProtectedRoute roles={['admin']}>
-              <UsersPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/recepcion"
-          element={
-            <ProtectedRoute roles={RECEPCION_ROLES}>
-              <RecepcionPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/analisis"
-          element={
-            <ProtectedRoute roles={ANALISIS_ROLES}>
-              <BandejaAnalisisPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/analisis/lote/:lotId"
-          element={
-            <ProtectedRoute roles={ANALISIS_ROLES}>
-              <AnalisisFichaPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/analisis/:analysisId"
-          element={
-            <ProtectedRoute roles={ANALISIS_ROLES}>
-              <AnalisisFichaPage />
-            </ProtectedRoute>
-          }
-        />
+        >
+          <Route path="/" element={<HomePage />} />
+          <Route path="/perfil" element={<ProfilePage />} />
+
+          <Route element={<ProtectedRoute roles={['admin']} />}>
+            <Route path="/admin/users" element={<UsersPage />} />
+          </Route>
+
+          <Route element={<ProtectedRoute roles={RECEPCION_ROLES} />}>
+            <Route path="/recepcion" element={<RecepcionPage />} />
+          </Route>
+
+          <Route element={<ProtectedRoute roles={ANALISIS_ROLES} />}>
+            <Route path="/analisis" element={<BandejaAnalisisPage />} />
+            <Route path="/analisis/lote/:lotId" element={<AnalisisFichaPage />} />
+            <Route path="/analisis/:analysisId" element={<AnalisisFichaPage />} />
+          </Route>
+        </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
