@@ -57,10 +57,12 @@ app.include_router(receptions.router, prefix="/api")
 app.include_router(analyses.router, prefix="/api")
 app.include_router(attachments.router, prefix="/api")
 
-# Servir ficheros subidos (uploads/<lot_id>/<uuid>.<ext>) como estático
-_uploads = Path(settings.upload_dir).resolve()
-_uploads.mkdir(parents=True, exist_ok=True)
-app.mount("/uploads", StaticFiles(directory=str(_uploads)), name="uploads")
+# Servir ficheros subidos como estático SOLO en modo local.
+# En modo gcs los ficheros viven en Cloud Storage y devolvemos signed URLs.
+if settings.storage_backend == "local":
+    _uploads = Path(settings.upload_dir).resolve()
+    _uploads.mkdir(parents=True, exist_ok=True)
+    app.mount("/uploads", StaticFiles(directory=str(_uploads)), name="uploads")
 
 # TODO siguientes routers:
 # from app.api import lots, histograms

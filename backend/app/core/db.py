@@ -9,7 +9,7 @@ from app.core.config import get_settings
 _settings = get_settings()
 
 engine = create_engine(
-    _settings.database_url,
+    _settings.effective_database_url,
     pool_pre_ping=True,
     echo=_settings.is_dev,
 )

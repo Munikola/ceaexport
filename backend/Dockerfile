@@ -18,6 +18,8 @@ RUN pip install -e .
 
 COPY . .
 
-EXPOSE 8000
+# Cloud Run inyecta $PORT (8080 por defecto). En local usa 8000 si no está.
+ENV PORT=8080
+EXPOSE 8080
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]

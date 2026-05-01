@@ -1,11 +1,9 @@
 """Endpoints para subir, listar y borrar fotos/documentos.
 
-Almacenamiento local en `<UPLOAD_DIR>/<lot_id>/<uuid>.<ext>`.
-La URL pública servida bajo `/uploads/...` (montaje estático en main.py).
+El almacenamiento físico (filesystem local o Google Cloud Storage) lo abstrae
+`app.services.storage`. En BD guardamos `file_url` con la URL servible al
+cliente (relativa en local, signed URL en GCS).
 """
-import shutil
-import uuid
-from pathlib import Path
 from typing import Annotated
 
 from fastapi import (
@@ -15,24 +13,18 @@ from fastapi import (
     Form,
     HTTPException,
     UploadFile,
-    status,
 )
 from sqlalchemy import select, text
 from sqlalchemy.orm import Session
 
-from app.core.config import get_settings
 from app.core.db import get_db
 from app.core.security import CurrentUser
 from app.models.attachments import Attachment, AttachmentType
 from app.models.operations import Lot
 from app.schemas.attachments import AttachmentRead
+from app.services.storage import get_storage
 
 router = APIRouter(prefix="/attachments", tags=["attachments"])
-
-settings = get_settings()
-UPLOAD_DIR = Path(settings.upload_dir).resolve()
-UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
-MAX_BYTES = settings.upload_max_mb * 1024 * 1024
 
 
 def _resolve_lot_id(db: Session, lot_id: int | None, analysis_id: int | None,
@@ -90,6 +82,19 @@ def _to_read(db: Session, a: Attachment) -> AttachmentRead:
             {"u": a.uploaded_by},
         ).scalar_one_or_none()
         user_name = row
+
+    # Compatibilidad hacia atrás: registros antiguos guardaban file_url como
+    # '/uploads/...' (ya servible). Los nuevos guardan el path interno y la
+    # URL servible la genera el storage backend (signed URL en GCS).
+    storage = get_storage()
+    if a.file_url and a.file_url.startswith("/"):
+        served_url = a.file_url
+    else:
+        try:
+            served_url = storage.signed_url(a.file_url) if a.file_url else ""
+        except Exception:
+            served_url = a.file_url or ""
+
     return AttachmentRead(
         attachment_id=a.attachment_id,
         attachment_type_id=a.attachment_type_id,
@@ -98,7 +103,7 @@ def _to_read(db: Session, a: Attachment) -> AttachmentRead:
         lot_id=a.lot_id,
         reception_id=a.reception_id,
         analysis_id=a.analysis_id,
-        file_url=a.file_url,
+        file_url=served_url,
         file_name=a.file_name,
         mime_type=a.mime_type,
         file_size_bytes=a.file_size_bytes,
@@ -126,41 +131,19 @@ async def upload(
     lot_id_resolved = _resolve_lot_id(db, lot_id, analysis_id, reception_id)
     type_id = _resolve_attachment_type(db, type_code)
 
-    # Carpeta por lote
-    lot_dir = UPLOAD_DIR / str(lot_id_resolved)
-    lot_dir.mkdir(parents=True, exist_ok=True)
-
-    ext = Path(file.filename).suffix.lower()
-    stored_name = f"{uuid.uuid4().hex}{ext}"
-    dest = lot_dir / stored_name
-
-    # Volcado con tope de tamaño
-    written = 0
-    with dest.open("wb") as out:
-        while True:
-            chunk = await file.read(1024 * 1024)
-            if not chunk:
-                break
-            written += len(chunk)
-            if written > MAX_BYTES:
-                out.close()
-                dest.unlink(missing_ok=True)
-                raise HTTPException(
-                    413, f"Fichero supera el máximo permitido de {settings.upload_max_mb} MB"
-                )
-            out.write(chunk)
-
-    file_url = f"/uploads/{lot_id_resolved}/{stored_name}"
+    # Volcar al backend de storage (local o GCS)
+    storage = get_storage()
+    stored = await storage.save(file, lot_id_resolved, file.filename)
 
     att = Attachment(
         attachment_type_id=type_id,
         lot_id=lot_id_resolved,
         reception_id=reception_id,
         analysis_id=analysis_id,
-        file_url=file_url,
+        file_url=stored.path,  # guardamos el path interno; signed URL la generamos al leer
         file_name=file.filename,
         mime_type=file.content_type,
-        file_size_bytes=written,
+        file_size_bytes=stored.size_bytes,
         comment=comment,
         uploaded_by=user.user_id,
     )
@@ -170,7 +153,7 @@ async def upload(
         db.refresh(att)
     except Exception as e:
         db.rollback()
-        dest.unlink(missing_ok=True)
+        storage.delete(stored.path)
         raise HTTPException(400, f"Error al guardar metadatos: {e}") from e
 
     return _to_read(db, att)
@@ -209,13 +192,8 @@ def delete_attachment(
         raise HTTPException(404, "No encontrado")
 
     # Borrar fichero físico (best-effort)
-    try:
-        url_path = att.file_url.lstrip("/")  # 'uploads/<lot>/<name>'
-        parts = url_path.split("/", 1)
-        if len(parts) == 2 and parts[0] == "uploads":
-            (UPLOAD_DIR / parts[1]).unlink(missing_ok=True)
-    except Exception:
-        pass
+    if att.file_url:
+        get_storage().delete(att.file_url)
 
     db.delete(att)
     db.commit()

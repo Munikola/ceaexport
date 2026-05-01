@@ -1,0 +1,29 @@
+server {
+    listen ${PORT};
+    server_name _;
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # Cache largo para assets con hash, sin cache para index.html
+    location ~* \.(js|css|woff2?|ttf|eot|svg|png|jpg|jpeg|gif|webp|ico)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        try_files $uri =404;
+    }
+
+    location = /index.html {
+        add_header Cache-Control "no-cache, no-store, must-revalidate";
+    }
+
+    # SPA fallback — cualquier ruta no-asset devuelve index.html
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Healthcheck
+    location = /healthz {
+        access_log off;
+        return 200 "ok\n";
+        add_header Content-Type text/plain;
+    }
+}

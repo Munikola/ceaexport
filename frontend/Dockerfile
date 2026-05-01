@@ -1,12 +1,34 @@
-FROM node:20-alpine
+# ──────────────────────────────────────────────────────
+# Stage 1: build estático con Vite
+# ──────────────────────────────────────────────────────
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-COPY package.json ./
-RUN npm install
+# VITE_API_URL se inyecta en build via --build-arg desde Cloud Build
+# (las vars VITE_* solo se consumen al construir, quedan inlined en el JS).
+ARG VITE_API_URL=""
+ENV VITE_API_URL=$VITE_API_URL
+
+COPY package.json package-lock.json ./
+RUN npm ci
 
 COPY . .
+RUN npm run build
 
-EXPOSE 5173
+# ──────────────────────────────────────────────────────
+# Stage 2: nginx sirve los estáticos
+# ──────────────────────────────────────────────────────
+FROM nginx:1.27-alpine
 
-CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+# Plantilla de nginx que respeta $PORT (Cloud Run inyecta uno aleatorio)
+COPY nginx.conf.template /etc/nginx/templates/default.conf.template
+
+# Copiar el build
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+ENV PORT=8080
+EXPOSE 8080
+
+# nginx 1.25+ procesa /etc/nginx/templates/*.template con envsubst al arrancar
+CMD ["nginx", "-g", "daemon off;"]
