@@ -1,7 +1,72 @@
 # Estado del proyecto — handoff
 
-**Última sesión:** 2026-04-28 (la prueba end-to-end se interrumpió a mitad).
-**Próxima:** retomar la prueba desde el punto donde se paró.
+**Última sesión:** 2026-05-02
+**Próxima:** **APLICAR MIGRACIÓN SQL + DEPLOY** antes de cualquier otra cosa.
+
+## ⚠️ Pendiente CRÍTICO al volver mañana
+
+El último commit (`0a6031e`) introduce **vistas materializadas** que el dashboard
+usa para ser rápido. Si no aplicas la migración, los endpoints petan.
+
+### Paso 1 — Migración SQL en Cloud SQL (Cloud Shell)
+
+```bash
+cd ~/ceaexport
+git pull
+# Asegurar proxy a Cloud SQL
+pgrep -f cloud-sql-proxy > /dev/null || (cd ~/ceaexport && nohup ./cloud-sql-proxy dnadata:europe-west1:cea-db > /tmp/proxy.log 2>&1 &) && sleep 3
+
+# Aplicar migración 02 (índices + 5 vistas materializadas + función refresh)
+PGPASSWORD="$(cat ~/cea-db-password.txt)" psql -h 127.0.0.1 -U postgres -d cea -f db/migrations/02_perf_indexes_and_mv.sql > /tmp/migr.log 2>&1
+echo "Exit: $?" && tail -10 /tmp/migr.log
+
+# Verificar (debe listar 5 filas)
+PGPASSWORD="$(cat ~/cea-db-password.txt)" psql -h 127.0.0.1 -U postgres -d cea -c "SELECT matviewname FROM pg_matviews WHERE matviewname LIKE 'mv_%';"
+```
+
+### Paso 2 — Deploy backend + frontend
+
+```bash
+./deploy/deploy.sh
+```
+
+(Tecléalo a mano, no copies del chat — el formato Markdown rompe el comando.)
+
+### Paso 3 — Probar y avanzar
+
+1. Login como admin → ver nuevo item **🔔 Alertas** en el menú.
+2. CRUD de reglas: editar, pausar, crear. 7 reglas seedeadas inicialmente.
+3. Comprobar que el Dashboard sigue cargando rápido (ahora usa las MVs).
+4. Histogramas debe mostrar los 1236 lotes distribuidos por talla.
+
+## Lo siguiente (cuando los pasos 1-3 estén OK)
+
+- **Rediseño visual del DashboardPage** según el mockup que mandó el usuario:
+  - 7 KPIs (añadir "Sin decisión" como card aparte)
+  - Gráfico evolución diaria con **doble eje** (lotes + % defectos como línea
+    con MA7 punteada)
+  - Tabla "**Últimos lotes con mayor % defectos**" — usa `worst-lots` endpoint
+    nuevo (`/api/reports/dashboard/worst-lots`)
+  - Panel "**Alertas operativas**" lateral — usa `operational-alerts` endpoint
+    que YA evalúa quality_rules dinámicamente
+  - El sidebar lateral del mockup NO se hace (decisión del usuario)
+  - Mantener el TopNav horizontal actual
+
+- **Refresh automático de MVs**: ahora son manuales. Opciones:
+  - Cron via Cloud Scheduler diario que llame `POST /api/admin/refresh-reports`
+  - Trigger en BD que refresque al cerrar un análisis
+  - Por ahora, refresh manual cuando hagan falta datos frescos
+
+## Estado actual de los servicios desplegados (Cloud Run, europe-west1)
+
+- Backend: `cea-backend-peerfce4sa-ew.a.run.app` (revisión última hasta `cea-backend-00012-xxx` cuando despliegues)
+- Frontend: `cea-frontend-peerfce4sa-ew.a.run.app`
+- Cloud SQL: `dnadata:europe-west1:cea-db` (Postgres 16, db-g1-small)
+- Bucket fotos: `gs://cea-uploads-dnadata`
+- Service account runtime: `cea-runtime@dnadata.iam.gserviceaccount.com`
+- Secretos: `cea-jwt-secret`, `cea-db-password`
+
+---
 
 ## Cómo retomar la prueba (paso por paso)
 
