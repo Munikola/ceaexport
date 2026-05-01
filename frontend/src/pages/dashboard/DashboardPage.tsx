@@ -11,8 +11,6 @@ import {
   PieChart,
   Pie,
   Cell,
-  AreaChart,
-  Area,
 } from 'recharts'
 import {
   Package,
@@ -85,8 +83,6 @@ const PALETTE = {
   danger: '#dc2626',
   neutral: '#94a3b8',
 }
-
-const SERIES = [PALETTE.primary, PALETTE.primarySoft, '#7c3aed', '#0891b2', '#0d9488']
 
 // ───────── página ─────────
 
