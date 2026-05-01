@@ -1,8 +1,8 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import ProtectedRoute from './routes/ProtectedRoute'
+import RoleHomeRedirect from './routes/RoleHomeRedirect'
 import AppLayout from './layouts/AppLayout'
-import HomePage from './pages/HomePage'
 import LoginPage from './pages/auth/LoginPage'
 import AcceptInvitation from './pages/public/AcceptInvitation'
 import ResetPassword from './pages/public/ResetPassword'
@@ -32,7 +32,7 @@ export default function App() {
             </ProtectedRoute>
           }
         >
-          <Route path="/" element={<HomePage />} />
+          <Route path="/" element={<RoleHomeRedirect />} />
           <Route path="/perfil" element={<ProfilePage />} />
 
           <Route element={<ProtectedRoute roles={['admin']} />}>
