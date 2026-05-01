@@ -62,16 +62,23 @@ def list_board(
     _user: CurrentUser,
     db: Annotated[Session, Depends(get_db)],
     state: str | None = None,
+    limit: int = 500,
 ):
-    """Tablero general: todos los lotes con su último análisis (si existe).
+    """Tablero general: lotes con su último análisis (si existe).
 
-    `state` opcional filtra por: pendiente | en_analisis | liberado | rechazado.
+    Por defecto trae los últimos 500 por fecha de recepción descendente.
+    `limit=0` desactiva el límite (solo si necesitas todo el histórico).
+    `state` opcional: pendiente | en_analisis | liberado | rechazado.
     """
     sql = "SELECT * FROM v_lot_board"
     params: dict = {}
     if state:
         sql += " WHERE board_state = :state"
         params["state"] = state
+    sql += " ORDER BY reception_date DESC NULLS LAST, arrival_time DESC NULLS LAST"
+    if limit and limit > 0:
+        sql += " LIMIT :limit"
+        params["limit"] = limit
     rows = db.execute(text(sql), params).mappings().all()
     return [LotBoardRow(**dict(r)) for r in rows]
 
