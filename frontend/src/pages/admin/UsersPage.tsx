@@ -1,8 +1,7 @@
 import { Fragment, useState, type FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { AxiosError } from 'axios'
-import { ArrowLeft, Copy, Trash2, KeyRound, Power, Plus, X } from 'lucide-react'
+import { Copy, Trash2, KeyRound, Power, Plus, X, Settings } from 'lucide-react'
 import { api } from '../../api/client'
 import type { AuthRole, AuthUser } from '../../contexts/AuthContext'
 
@@ -19,7 +18,6 @@ interface Invitation {
 }
 
 export default function UsersPage() {
-  const navigate = useNavigate()
   const qc = useQueryClient()
   const [showInvite, setShowInvite] = useState(false)
   const [copiedToast, setCopiedToast] = useState<string | null>(null)
@@ -49,21 +47,20 @@ export default function UsersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
-          <button
-            onClick={() => navigate('/')}
-            className="flex items-center gap-1 text-sm text-slate-600 hover:text-slate-900"
-          >
-            <ArrowLeft className="h-4 w-4" /> Inicio
-          </button>
-          <h1 className="text-base font-semibold">Usuarios e invitaciones</h1>
-          <div className="w-16" />
+    <main className="mx-auto max-w-5xl space-y-6 px-3 py-6 sm:px-5">
+      <div className="mb-2 flex items-center gap-3 border-b border-slate-200 pb-4">
+        <div className="rounded-lg bg-rose-100 p-2 text-rose-700">
+          <Settings className="h-5 w-5" />
         </div>
-      </header>
-
-      <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
+            Usuarios e invitaciones
+          </h1>
+          <p className="text-sm text-slate-500">
+            Invita, cambia roles y gestiona el acceso al sistema.
+          </p>
+        </div>
+      </div>
         {copiedToast && (
           <div className="fixed left-1/2 top-4 z-50 -translate-x-1/2 rounded-full bg-slate-900 px-4 py-2 text-xs text-white shadow-lg">
             {copiedToast}
@@ -190,8 +187,7 @@ export default function UsersPage() {
             </div>
           </section>
         )}
-      </main>
-    </div>
+    </main>
   )
 }
 

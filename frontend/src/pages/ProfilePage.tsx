@@ -1,14 +1,12 @@
 import { useState, type FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { AxiosError } from 'axios'
-import { ArrowLeft } from 'lucide-react'
+import { User as UserIcon } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { api } from '../api/client'
 import PasswordInput, { isPasswordStrong } from '../components/PasswordInput'
 
 export default function ProfilePage() {
-  const { user, reload, logout } = useAuth()
-  const navigate = useNavigate()
+  const { user, reload } = useAuth()
   const [fullName, setFullName] = useState(user?.full_name ?? '')
   const [email, setEmail] = useState(user?.email ?? '')
   const [savingProfile, setSavingProfile] = useState(false)
@@ -67,29 +65,18 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3">
-          <button
-            onClick={() => navigate('/')}
-            className="flex items-center gap-1 text-sm text-slate-600 hover:text-slate-900"
-          >
-            <ArrowLeft className="h-4 w-4" /> Inicio
-          </button>
-          <button
-            onClick={() => {
-              logout()
-              navigate('/login')
-            }}
-            className="text-sm text-slate-600 hover:text-red-600"
-          >
-            Cerrar sesión
-          </button>
+    <main className="mx-auto max-w-3xl space-y-6 px-3 py-6 sm:px-5">
+      <div className="flex items-center gap-3 border-b border-slate-200 pb-4">
+        <div className="rounded-lg bg-slate-100 p-2 text-slate-600">
+          <UserIcon className="h-5 w-5" />
         </div>
-      </header>
-
-      <main className="mx-auto max-w-3xl space-y-6 px-4 py-8">
-        <h1 className="text-2xl font-semibold text-slate-900">Mi perfil</h1>
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Mi perfil</h1>
+          <p className="text-sm text-slate-500">
+            Datos de la cuenta y cambio de contraseña.
+          </p>
+        </div>
+      </div>
 
         {/* Datos personales */}
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -157,7 +144,6 @@ export default function ProfilePage() {
             </button>
           </form>
         </section>
-      </main>
-    </div>
+    </main>
   )
 }

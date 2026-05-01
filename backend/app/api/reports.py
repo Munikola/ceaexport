@@ -251,14 +251,25 @@ def histogram_by_classification(
 ):
     """Distribución de lotes por clasificación de talla.
 
-    Como aquí no tenemos los R-CC-034 individuales en el histórico, lo que
-    devolvemos es la distribución por `average_classification_code` — es decir,
-    cuántos lotes (y cuántas libras) cayeron en cada rango.
+    Como el histórico (1236 lotes del Excel) no rellena
+    `average_classification_code`, clasificamos dinámicamente en el momento
+    de la query a partir de `c_kg` (camarones por kilo CON cabeza) usando
+    los rangos de la tabla `cc_classifications`. Para producto COLA usamos
+    `c_kg2` (sin cabeza) contra `sc_classifications`.
+
+    Cuando se capturen los R-CC-034 individuales, esa clasificación afinada
+    se reflejará automáticamente porque c_kg saldrá del histograma real.
     """
     start, end = _default_range(start_date, end_date)
 
-    where = ["qa.analysis_date BETWEEN :start AND :end",
-             "qa.average_classification_code IS NOT NULL"]
+    is_cola = product_type == "COLA"
+    cls_table = "sc_classifications" if is_cola else "cc_classifications"
+    cls_col = "c_kg2" if is_cola else "c_kg"
+
+    where = [
+        "qa.analysis_date BETWEEN :start AND :end",
+        f"qa.{cls_col} IS NOT NULL",
+    ]
     params: dict = {"start": start, "end": end}
     if product_type:
         where.append("l.product_type = :product_type")
@@ -273,17 +284,21 @@ def histogram_by_classification(
         text(
             f"""
             SELECT
-                qa.average_classification_code AS classification,
-                COUNT(*) AS lots,
+                cls.range_code AS classification,
+                cls.sort_order  AS sort_order,
+                COUNT(*)        AS lots,
                 COALESCE(SUM(rl.received_lbs), 0) AS total_lbs
             FROM quality_analyses qa
             JOIN analysis_lots al ON qa.analysis_id = al.analysis_id
             JOIN lots l           ON al.lot_id = l.lot_id
             LEFT JOIN suppliers s ON l.supplier_id = s.supplier_id
             LEFT JOIN reception_lots rl ON l.lot_id = rl.lot_id
+            JOIN {cls_table} cls
+              ON qa.{cls_col} >= cls.min_count
+             AND qa.{cls_col} <  cls.max_count
             WHERE {where_sql}
-            GROUP BY qa.average_classification_code
-            ORDER BY qa.average_classification_code
+            GROUP BY cls.range_code, cls.sort_order
+            ORDER BY cls.sort_order
             """  # noqa: S608
         ),
         params,
@@ -294,6 +309,7 @@ def histogram_by_classification(
         "start_date": start.isoformat(),
         "end_date": end.isoformat(),
         "filters": {"product_type": product_type, "supplier": supplier},
+        "classification_type": "SC" if is_cola else "CC",
         "total_lots": total_lots,
         "buckets": [
             {
@@ -314,7 +330,11 @@ def histogram_grammage_trend(
     start_date: date | None = Query(None),
     end_date: date | None = Query(None),
 ):
-    """Evolución del gramaje promedio por mes."""
+    """Evolución del gramaje promedio por mes.
+
+    Si average_grammage está NULL (caso del histórico importado del Excel),
+    derivamos el gramaje desde c_kg (gramos = 1000 / c_kg).
+    """
     start, end = _default_range(start_date, end_date)
 
     rows = db.execute(
@@ -322,11 +342,14 @@ def histogram_grammage_trend(
             """
             SELECT
                 DATE_TRUNC('month', qa.analysis_date)::date AS month,
-                ROUND(AVG(qa.average_grammage)::numeric, 2) AS avg_grammage,
+                ROUND(
+                    AVG(COALESCE(qa.average_grammage, 1000.0 / NULLIF(qa.c_kg, 0)))::numeric,
+                    2
+                ) AS avg_grammage,
                 COUNT(*) AS lots
             FROM quality_analyses qa
             WHERE qa.analysis_date BETWEEN :start AND :end
-              AND qa.average_grammage IS NOT NULL
+              AND (qa.average_grammage IS NOT NULL OR qa.c_kg IS NOT NULL)
             GROUP BY 1
             ORDER BY 1
             """

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 import { AxiosError } from 'axios'
-import { ArrowLeft, Save, Truck, Snowflake, SprayCan, FileCheck, Thermometer, MapPin } from 'lucide-react'
+import { Save, Truck, Snowflake, SprayCan, FileCheck, Thermometer, MapPin } from 'lucide-react'
 
 import { api } from '../../api/client'
 import type { LotInReceptionCreate, ReceptionCreate, ReceptionRead } from '../../types/domain'
@@ -82,21 +82,22 @@ export default function RecepcionPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 pb-24">
-      {/* Header sticky con guardar siempre visible */}
-      <header className="sticky top-0 z-20 border-b border-slate-200 bg-white shadow-sm">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3">
-          <button
-            onClick={() => navigate('/')}
-            className="flex items-center gap-1 text-sm text-slate-600 hover:text-slate-900"
-          >
-            <ArrowLeft className="h-4 w-4" /> Inicio
-          </button>
-          <h1 className="text-base font-semibold">Nueva recepción</h1>
+      {/* Sub-header sticky con título y guardar siempre visible */}
+      <header className="sticky top-16 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
+        <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-3 py-3 sm:px-5">
+          <div className="flex items-center gap-3">
+            <div className="rounded-lg bg-cea-100 p-2 text-cea-700">
+              <Truck className="h-4 w-4" />
+            </div>
+            <h1 className="text-base font-semibold tracking-tight text-slate-900 sm:text-lg">
+              Nueva recepción
+            </h1>
+          </div>
           <button
             type="button"
             onClick={handleSubmit}
             disabled={!canSubmit || submit.isPending}
-            className="flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-700 disabled:bg-slate-300"
+            className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
           >
             <Save className="h-4 w-4" />
             {submit.isPending ? 'Guardando…' : 'Guardar'}

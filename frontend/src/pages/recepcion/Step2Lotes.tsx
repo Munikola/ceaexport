@@ -2,7 +2,7 @@ import { Plus, Trash2, Copy } from 'lucide-react'
 import type { LotInReceptionCreate, ProductType } from '../../types/domain'
 import CatalogSelect from '../../components/CatalogSelect'
 import CatalogAutocomplete from '../../components/CatalogAutocomplete'
-import { useCatalog } from '../../hooks/useCatalogs'
+import CatalogMultiSelect from '../../components/CatalogMultiSelect'
 
 interface Props {
   lots: Partial<LotInReceptionCreate>[]
@@ -10,8 +10,6 @@ interface Props {
 }
 
 export default function Step2Lotes({ lots, onChange }: Props) {
-  const treaters = useCatalog('treaters')
-
   const updateLot = (idx: number, patch: Partial<LotInReceptionCreate>) => {
     onChange(lots.map((l, i) => (i === idx ? { ...l, ...patch } : l)))
   }
@@ -193,34 +191,14 @@ export default function Step2Lotes({ lots, onChange }: Props) {
                 />
               </Field>
 
-              <Field label="Tratadores">
-                <div className="flex flex-wrap gap-1.5">
-                  {(treaters.data ?? []).map((t) => {
-                    const selected = (lot.treater_ids ?? []).includes(t.id)
-                    return (
-                      <button
-                        key={t.id}
-                        type="button"
-                        onClick={() => {
-                          const current = lot.treater_ids ?? []
-                          updateLot(idx, {
-                            treater_ids: selected
-                              ? current.filter((id) => id !== t.id)
-                              : [...current, t.id],
-                          })
-                        }}
-                        className={`rounded-full border px-3 py-1 text-xs ${
-                          selected
-                            ? 'border-cea-700 bg-cea-700 text-white'
-                            : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
-                        }`}
-                      >
-                        {t.name}
-                      </button>
-                    )
-                  })}
-                </div>
-              </Field>
+              <CatalogMultiSelect
+                catalog="treaters"
+                label="Tratadores"
+                value={lot.treater_ids ?? []}
+                onChange={(ids) => updateLot(idx, { treater_ids: ids })}
+                placeholder="Buscar tratador o añadir nuevo…"
+                pinTopMatching={(extra) => extra.is_proveedor === true}
+              />
 
               <div className="sm:col-span-2">
                 <Field label="Observaciones">

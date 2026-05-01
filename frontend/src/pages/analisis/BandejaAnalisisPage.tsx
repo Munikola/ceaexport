@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   ArrowDown,
-  ArrowLeft,
   ArrowUp,
   ArrowUpDown,
   ClipboardList,
@@ -123,30 +122,19 @@ export default function BandejaAnalisisPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
-          <button
-            onClick={() => navigate('/')}
-            className="flex items-center gap-1 text-sm text-slate-600 hover:text-slate-900"
-          >
-            <ArrowLeft className="h-4 w-4" /> Inicio
-          </button>
-          <h1 className="flex items-center gap-2 text-base font-semibold">
-            <ClipboardList className="h-4 w-4 text-emerald-700" />
-            Muestras
-          </h1>
-          <div className="w-16" />
+    <>
+    <main className="mx-auto max-w-7xl px-3 py-6 sm:px-5">
+      <div className="mb-5 flex items-center gap-3">
+        <div className="rounded-xl bg-emerald-100 p-2.5 text-emerald-700">
+          <ClipboardList className="h-5 w-5" />
         </div>
-      </header>
-
-      <main className="mx-auto max-w-7xl px-4 py-6">
-        <div className="mb-4">
-          <h2 className="text-2xl font-bold text-slate-900">Muestras</h2>
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Muestras</h1>
           <p className="text-sm text-slate-500">
             Pulsa una fila para abrir su ficha de análisis.
           </p>
         </div>
+      </div>
 
         {/* Filtro / búsqueda */}
         <div className="mb-4 flex flex-col gap-2 sm:flex-row">
@@ -387,7 +375,7 @@ export default function BandejaAnalisisPage() {
           </div>
         </div>
       )}
-    </div>
+    </>
   )
 }
 
