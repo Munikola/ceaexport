@@ -25,6 +25,10 @@ interface Props {
   label?: string
   showRules?: boolean
   autoFocus?: boolean
+  id?: string
+  autoComplete?: string
+  /** Clases extra para el <input> (útil para añadir padding por iconos externos). */
+  inputClassName?: string
 }
 
 export default function PasswordInput({
@@ -34,6 +38,9 @@ export default function PasswordInput({
   label,
   showRules = false,
   autoFocus,
+  id,
+  autoComplete = 'current-password',
+  inputClassName = '',
 }: Props) {
   const [visible, setVisible] = useState(false)
 
@@ -42,12 +49,14 @@ export default function PasswordInput({
       {label && <label className="mb-1 block text-sm font-medium text-slate-700">{label}</label>}
       <div className="relative">
         <input
+          id={id}
           type={visible ? 'text' : 'password'}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           autoFocus={autoFocus}
-          className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 pr-10 text-sm outline-none transition focus:border-cea-500 focus:ring-2 focus:ring-cea-500/20"
+          autoComplete={autoComplete}
+          className={`w-full rounded-lg border border-slate-300 bg-white py-2.5 pl-3 pr-10 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 hover:border-slate-400 focus:border-cea-500 focus:ring-2 focus:ring-cea-500/20 ${inputClassName}`}
         />
         <button
           type="button"
