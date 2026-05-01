@@ -10,7 +10,10 @@ import {
   User as UserIcon,
   Home,
 } from 'lucide-react'
+
+// FlaskConical se conserva en los items de navegación (Histogramas).
 import { useAuth } from '../contexts/AuthContext'
+import ceaLogo from '../assets/cea-logo.jpeg'
 
 interface NavItem {
   icon: typeof Home
@@ -46,15 +49,13 @@ export default function MainNav() {
   return (
     <header className="sticky top-0 z-30 border-b border-cea-800 bg-cea-900 text-white shadow-md">
       <div className="mx-auto flex max-w-7xl items-center gap-3 px-3 py-2 sm:px-4">
-        {/* Logo + nombre */}
-        <Link to="/" className="flex shrink-0 items-center gap-2 pr-2">
-          <div className="rounded-lg bg-white/10 p-1.5">
-            <FlaskConical className="h-5 w-5" />
-          </div>
-          <div className="hidden md:block">
-            <p className="text-sm font-semibold leading-tight tracking-tight">CEA EXPORT</p>
-            <p className="text-[10px] leading-tight text-cea-200">Control de calidad</p>
-          </div>
+        {/* Logo CEA EXPORT */}
+        <Link to="/" className="flex shrink-0 items-center pr-2" title="Inicio">
+          <img
+            src={ceaLogo}
+            alt="CEA EXPORT"
+            className="h-9 w-9 rounded-md object-cover sm:h-10 sm:w-10"
+          />
         </Link>
 
         {/* Separador */}

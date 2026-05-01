@@ -21,7 +21,9 @@
     "@hookform/resolvers": "^3.9.1",
     "lucide-react": "^0.468.0",
     "clsx": "^2.1.1",
-    "tailwind-merge": "^2.5.5"
+    "tailwind-merge": "^2.5.5",
+    "recharts": "^2.15.0",
+    "date-fns": "^4.1.0"
   },
   "devDependencies": {
     "@types/react": "^18.3.12",

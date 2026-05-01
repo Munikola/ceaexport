@@ -11,9 +11,12 @@ import UsersPage from './pages/admin/UsersPage'
 import RecepcionPage from './pages/recepcion/RecepcionPage'
 import BandejaAnalisisPage from './pages/analisis/BandejaAnalisisPage'
 import AnalisisFichaPage from './pages/analisis/AnalisisFichaPage'
+import DashboardPage from './pages/dashboard/DashboardPage'
+import HistogramasPage from './pages/histogramas/HistogramasPage'
 
 const RECEPCION_ROLES = ['admin', 'recepcion']
 const ANALISIS_ROLES = ['admin', 'analista_lab', 'supervisor_calidad', 'jefe_calidad']
+const DASHBOARD_ROLES = ['admin', 'jefe_calidad', 'consulta']
 
 export default function App() {
   return (
@@ -47,6 +50,11 @@ export default function App() {
             <Route path="/analisis" element={<BandejaAnalisisPage />} />
             <Route path="/analisis/lote/:lotId" element={<AnalisisFichaPage />} />
             <Route path="/analisis/:analysisId" element={<AnalisisFichaPage />} />
+            <Route path="/histogramas" element={<HistogramasPage />} />
+          </Route>
+
+          <Route element={<ProtectedRoute roles={DASHBOARD_ROLES} />}>
+            <Route path="/dashboard" element={<DashboardPage />} />
           </Route>
         </Route>
 
