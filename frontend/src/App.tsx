@@ -8,6 +8,7 @@ import AcceptInvitation from './pages/public/AcceptInvitation'
 import ResetPassword from './pages/public/ResetPassword'
 import ProfilePage from './pages/ProfilePage'
 import UsersPage from './pages/admin/UsersPage'
+import AlertRulesPage from './pages/admin/AlertRulesPage'
 import RecepcionPage from './pages/recepcion/RecepcionPage'
 import BandejaAnalisisPage from './pages/analisis/BandejaAnalisisPage'
 import AnalisisFichaPage from './pages/analisis/AnalisisFichaPage'
@@ -40,6 +41,7 @@ export default function App() {
 
           <Route element={<ProtectedRoute roles={['admin']} />}>
             <Route path="/admin/users" element={<UsersPage />} />
+            <Route path="/admin/alertas" element={<AlertRulesPage />} />
           </Route>
 
           <Route element={<ProtectedRoute roles={RECEPCION_ROLES} />}>

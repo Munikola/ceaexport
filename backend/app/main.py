@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from app.api import admin, analyses, attachments, auth, catalogs, public, receptions, reports
+from app.api import admin, analyses, attachments, auth, catalogs, public, quality_rules, receptions, reports
 from app.core.config import get_settings
 
 settings = get_settings()
@@ -57,6 +57,7 @@ app.include_router(receptions.router, prefix="/api")
 app.include_router(analyses.router, prefix="/api")
 app.include_router(attachments.router, prefix="/api")
 app.include_router(reports.router, prefix="/api")
+app.include_router(quality_rules.router, prefix="/api")
 
 # Servir ficheros subidos como estático SOLO en modo local.
 # En modo gcs los ficheros viven en Cloud Storage y devolvemos signed URLs.

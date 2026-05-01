@@ -5,6 +5,7 @@ import {
   BarChart3,
   FlaskConical,
   Settings,
+  Bell,
   LogOut,
   User as UserIcon,
 } from 'lucide-react'
@@ -26,6 +27,7 @@ const ITEMS: NavItem[] = [
   { icon: ClipboardList, label: 'Muestras', to: '/analisis', roles: ['admin', 'analista_lab', 'supervisor_calidad', 'jefe_calidad'] },
   { icon: FlaskConical, label: 'Histogramas', to: '/histogramas', roles: ['admin', 'analista_lab', 'supervisor_calidad', 'jefe_calidad'] },
   { icon: BarChart3, label: 'Dashboard', to: '/dashboard', roles: ['admin', 'jefe_calidad', 'consulta'] },
+  { icon: Bell, label: 'Alertas', to: '/admin/alertas', roles: ['admin'] },
   { icon: Settings, label: 'Admin', to: '/admin/users', roles: ['admin'] },
 ]
 
