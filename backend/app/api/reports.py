@@ -583,6 +583,231 @@ def histogram_by_classification(
     }
 
 
+def _calibre_category(bmin: int, bmax: int, opt_min: int, opt_max: int,
+                       ace_lower_min: int, ace_upper_max: int) -> str:
+    """Clasifica un bucket: óptimo / aceptable / crítico."""
+    if bmin >= opt_min and bmax <= opt_max:
+        return "optimo"
+    if (bmin >= ace_lower_min and bmax <= opt_min) or (bmin >= opt_max and bmax <= ace_upper_max):
+        return "aceptable"
+    return "critico"
+
+
+@router.get("/histogram/calibre-distribution")
+def histogram_calibre_distribution(
+    _user: CurrentUser,
+    db: Annotated[Session, Depends(get_db)],
+    start_date: date | None = Query(None),
+    end_date: date | None = Query(None),
+    product_type: str | None = Query(None, pattern="^(ENTERO|COLA)?$"),
+    supplier: str | None = Query(None),
+    optimal_min: int = Query(40, ge=1, le=200),
+    optimal_max: int = Query(60, ge=1, le=200),
+    aceptable_lower_min: int = Query(30, ge=1, le=200),
+    aceptable_upper_max: int = Query(70, ge=1, le=200),
+    bucket_size: int = Query(10, ge=1, le=50),
+    target_grammage: int = Query(50, ge=1, le=200),
+):
+    """Distribución de lotes por calibre (gramaje promedio) con bucketing.
+
+    Devuelve TODO lo que la pantalla de Histogramas necesita:
+    - KPIs (total, peso medio, % en rango óptimo, % fuera de rango)
+    - Buckets categorizados (crítico/aceptable/óptimo) + % y % acumulado
+    - Evolución mensual del gramaje promedio
+    - Insight textual generado heurísticamente
+    - Resumen del periodo (min/max/promedio/días en rango)
+    """
+    start, end = _default_range(start_date, end_date)
+
+    where = [
+        "qa.analysis_date BETWEEN :start AND :end",
+        "(qa.average_grammage IS NOT NULL OR qa.c_kg IS NOT NULL)",
+    ]
+    params: dict = {"start": start, "end": end, "bs": bucket_size}
+    if product_type:
+        where.append("l.product_type = :product_type")
+        params["product_type"] = product_type
+    if supplier:
+        where.append("s.supplier_name ILIKE :supplier")
+        params["supplier"] = f"%{supplier}%"
+    where_sql = " AND ".join(where)
+
+    # Buckets
+    rows = db.execute(
+        text(
+            f"""
+            WITH lot_grammage AS (
+                SELECT
+                    l.lot_id,
+                    COALESCE(qa.average_grammage, 1000.0 / NULLIF(qa.c_kg, 0)) AS g
+                FROM quality_analyses qa
+                JOIN analysis_lots al ON qa.analysis_id = al.analysis_id
+                JOIN lots l           ON al.lot_id = l.lot_id
+                LEFT JOIN suppliers s ON l.supplier_id = s.supplier_id
+                WHERE {where_sql}
+            )
+            SELECT
+                (FLOOR(g / :bs) * :bs)::int        AS bucket_min,
+                ((FLOOR(g / :bs) + 1) * :bs)::int  AS bucket_max,
+                COUNT(*)                           AS lots,
+                ROUND(AVG(g)::numeric, 2)          AS bucket_avg
+            FROM lot_grammage
+            WHERE g IS NOT NULL AND g > 0
+            GROUP BY bucket_min, bucket_max
+            ORDER BY bucket_min
+            """  # noqa: S608
+        ),
+        params,
+    ).mappings().all()
+
+    total_lots = sum(r["lots"] for r in rows)
+    cumulative = 0
+    buckets = []
+    for r in rows:
+        cumulative += r["lots"]
+        category = _calibre_category(
+            r["bucket_min"], r["bucket_max"],
+            optimal_min, optimal_max, aceptable_lower_min, aceptable_upper_max,
+        )
+        buckets.append({
+            "min_g": r["bucket_min"],
+            "max_g": r["bucket_max"],
+            "label": f"{r['bucket_min']}–{r['bucket_max']}",
+            "lots": r["lots"],
+            "pct": round(r["lots"] / total_lots * 100, 1) if total_lots else 0,
+            "cumulative_pct": round(cumulative / total_lots * 100, 1) if total_lots else 0,
+            "category": category,
+            "bucket_avg": float(r["bucket_avg"] or 0),
+        })
+
+    # KPI globales
+    kpi_row = db.execute(
+        text(
+            f"""
+            SELECT
+                ROUND(AVG(COALESCE(qa.average_grammage, 1000.0 / NULLIF(qa.c_kg, 0)))::numeric, 2) AS avg_g,
+                ROUND(MIN(COALESCE(qa.average_grammage, 1000.0 / NULLIF(qa.c_kg, 0)))::numeric, 2) AS min_g,
+                ROUND(MAX(COALESCE(qa.average_grammage, 1000.0 / NULLIF(qa.c_kg, 0)))::numeric, 2) AS max_g
+            FROM quality_analyses qa
+            JOIN analysis_lots al ON qa.analysis_id = al.analysis_id
+            JOIN lots l           ON al.lot_id = l.lot_id
+            LEFT JOIN suppliers s ON l.supplier_id = s.supplier_id
+            WHERE {where_sql}
+            """  # noqa: S608
+        ),
+        params,
+    ).mappings().first()
+
+    in_optimal = sum(b["lots"] for b in buckets if b["category"] == "optimo")
+    in_aceptable = sum(b["lots"] for b in buckets if b["category"] == "aceptable")
+    in_critico = sum(b["lots"] for b in buckets if b["category"] == "critico")
+
+    # Evolución mensual
+    evolution_rows = db.execute(
+        text(
+            f"""
+            WITH monthly AS (
+                SELECT
+                    DATE_TRUNC('month', qa.analysis_date)::date AS month,
+                    COALESCE(qa.average_grammage, 1000.0 / NULLIF(qa.c_kg, 0)) AS g
+                FROM quality_analyses qa
+                JOIN analysis_lots al ON qa.analysis_id = al.analysis_id
+                JOIN lots l           ON al.lot_id = l.lot_id
+                LEFT JOIN suppliers s ON l.supplier_id = s.supplier_id
+                WHERE {where_sql}
+            )
+            SELECT month, ROUND(AVG(g)::numeric, 2) AS avg_g, COUNT(*) AS lots
+            FROM monthly
+            WHERE g IS NOT NULL
+            GROUP BY month
+            ORDER BY month
+            """  # noqa: S608
+        ),
+        params,
+    ).mappings().all()
+
+    evolution = [
+        {
+            "month": r["month"].isoformat() if r["month"] else None,
+            "avg_grammage": float(r["avg_g"] or 0),
+            "lots": r["lots"],
+            "in_optimal": optimal_min <= float(r["avg_g"] or 0) <= optimal_max,
+        }
+        for r in evolution_rows
+    ]
+    days_in_range = sum(1 for e in evolution if e["in_optimal"])
+    days_total = len(evolution)
+    days_in_range_pct = round(days_in_range / days_total * 100) if days_total else 0
+
+    # Insight heurístico
+    avg_g = float(kpi_row["avg_g"] or 0) if kpi_row else 0
+    out_pct = round((in_critico + in_aceptable) / total_lots * 100, 1) if total_lots else 0
+    insight_main = (
+        f"El {out_pct}% de los lotes está fuera del rango óptimo "
+        f"({optimal_min}–{optimal_max} g)."
+    )
+    if avg_g and avg_g < optimal_min:
+        insight_detail = (
+            f"La mayor concentración de lotes está en calibres pequeños "
+            f"({optimal_min - 10}–{optimal_min + 10} g), tendencia a calibres más pequeños."
+        )
+    elif avg_g and avg_g > optimal_max:
+        insight_detail = (
+            f"La mayor concentración de lotes está en calibres grandes "
+            f"(>{optimal_max} g), tendencia a calibres más grandes."
+        )
+    else:
+        insight_detail = "La distribución se concentra cerca del rango óptimo."
+    impacts = []
+    if out_pct >= 30:
+        impacts.append("Menor rendimiento comercial")
+    if in_critico / max(total_lots, 1) >= 0.10:
+        impacts.append("Posible impacto en calidad")
+    if avg_g and abs(avg_g - target_grammage) >= 5:
+        impacts.append("Requiere ajuste en proceso")
+    if not impacts:
+        impacts.append("Distribución dentro de parámetros aceptables")
+
+    return {
+        "config": {
+            "optimal_min": optimal_min,
+            "optimal_max": optimal_max,
+            "aceptable_lower_min": aceptable_lower_min,
+            "aceptable_upper_max": aceptable_upper_max,
+            "bucket_size": bucket_size,
+            "target_grammage": target_grammage,
+            "start_date": start.isoformat(),
+            "end_date": end.isoformat(),
+            "product_type": product_type,
+            "supplier": supplier,
+        },
+        "kpis": {
+            "total_lots": total_lots,
+            "avg_grammage": avg_g,
+            "in_optimal_lots": in_optimal,
+            "in_optimal_pct": round(in_optimal / total_lots * 100, 1) if total_lots else 0,
+            "out_of_range_lots": in_critico + in_aceptable,
+            "out_of_range_pct": out_pct,
+        },
+        "buckets": buckets,
+        "evolution": evolution,
+        "summary": {
+            "min": float(kpi_row["min_g"] or 0) if kpi_row else 0,
+            "max": float(kpi_row["max_g"] or 0) if kpi_row else 0,
+            "avg": avg_g,
+            "days_in_range": days_in_range,
+            "days_total": days_total,
+            "days_in_range_pct": days_in_range_pct,
+            "days_out_pct": 100 - days_in_range_pct if days_total else 0,
+        },
+        "insight": {
+            "main": insight_main,
+            "detail": insight_detail,
+            "impacts": impacts,
+        },
+    }
+
+
 @router.get("/histogram/grammage-trend")
 def histogram_grammage_trend(
     _user: CurrentUser,
