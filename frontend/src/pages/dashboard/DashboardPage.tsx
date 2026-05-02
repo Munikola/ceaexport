@@ -567,13 +567,13 @@ function Kpi({
  */
 function AnimatedKpiValue({ value }: { value: string }) {
   const m = value.match(/^([\d.,]+)\s*([%kKM]*\s*\w*)?$/)
-  if (!m) return <>{value}</>
-  const numStr = m[1].replace(/,/g, '')
+  const numStr = m ? m[1].replace(/,/g, '') : '0'
   const num = parseFloat(numStr)
-  const suffix = m[2] ?? ''
+  const suffix = m?.[2] ?? ''
   const isFloat = numStr.includes('.')
+  // Hook SIEMPRE llamado (regla de hooks)
   const animated = useCountUp(isFinite(num) ? num : 0, 700)
-  if (!isFinite(num)) return <>{value}</>
+  if (!m || !isFinite(num)) return <>{value}</>
   const formatted = isFloat
     ? animated.toLocaleString('es', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
     : Math.round(animated).toLocaleString('es')
