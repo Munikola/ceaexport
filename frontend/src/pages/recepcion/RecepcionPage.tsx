@@ -24,7 +24,7 @@ import {
 } from 'lucide-react'
 
 import { api } from '../../api/client'
-import type { LotInReceptionCreate, ReceptionCreate, ReceptionRead } from '../../types/domain'
+import type { ReceptionCreate, ReceptionRead } from '../../types/domain'
 import CatalogSelect from '../../components/CatalogSelect'
 import CatalogAutocomplete from '../../components/CatalogAutocomplete'
 import { useCatalog } from '../../hooks/useCatalogs'
