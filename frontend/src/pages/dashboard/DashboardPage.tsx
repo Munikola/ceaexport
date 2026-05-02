@@ -23,10 +23,12 @@ import {
   XCircle,
   HelpCircle,
   Bell,
-  TrendingUp,
 } from 'lucide-react'
 import { api } from '../../api/client'
 import DateRangePicker from '../../components/DateRangePicker'
+import Skeleton from '../../components/Skeleton'
+import EmptyState from '../../components/EmptyState'
+import { useCountUp } from '../../hooks/useCountUp'
 
 // ───────── tipos ─────────
 
@@ -289,7 +291,12 @@ export default function DashboardPage() {
             </div>
           </>
         ) : (
-          <Empty loading={perDay.isLoading} />
+          <EmptyState
+            loading={perDay.isLoading}
+            variant="chart"
+            title="Sin actividad en este rango"
+            description="Prueba a ampliar el periodo seleccionado"
+          />
         )}
       </Section>
 
@@ -313,7 +320,7 @@ export default function DashboardPage() {
                 </ComposedChart>
               </ResponsiveContainer>
             </div>
-          ) : (<Empty loading={topVolume.isLoading} />)}
+          ) : (<EmptyState loading={topVolume.isLoading} variant="chart" />)}
         </Section>
 
         <Section title="Defectos más frecuentes" subtitle="% promedio en el período">
@@ -333,7 +340,7 @@ export default function DashboardPage() {
                 </ComposedChart>
               </ResponsiveContainer>
             </div>
-          ) : (<Empty loading={defectStats.isLoading} />)}
+          ) : (<EmptyState loading={defectStats.isLoading} variant="chart" />)}
         </Section>
 
         {/* Tabla proveedores con más defectos (estilo mockup) */}
@@ -371,7 +378,7 @@ export default function DashboardPage() {
                 </tbody>
               </table>
             </div>
-          ) : (<Empty loading={topDefectsSuppliers.isLoading} />)}
+          ) : (<EmptyState loading={topDefectsSuppliers.isLoading} variant="table" />)}
         </Section>
 
         {/* Alertas operativas */}
@@ -429,7 +436,7 @@ export default function DashboardPage() {
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {worstLots.data.map((lot) => (
-                      <tr key={`${lot.lot_id}-${lot.analysis_id}`} className="hover:bg-slate-50">
+                      <tr key={`${lot.lot_id}-${lot.analysis_id}`} className="table-row-hover">
                         <td className="py-2 font-medium text-slate-900">
                           <Link
                             to={`/analisis/${lot.analysis_id}`}
@@ -464,7 +471,7 @@ export default function DashboardPage() {
                   <Link to="/analisis" className="text-xs text-cea-600 hover:underline">Ver más →</Link>
                 </div>
               </div>
-            ) : (<Empty loading={worstLots.isLoading} />)}
+            ) : (<EmptyState loading={worstLots.isLoading} variant="table" />)}
           </Section>
         </div>
 
@@ -503,7 +510,7 @@ export default function DashboardPage() {
                 />
               </div>
             </div>
-          ) : (<Empty loading={kpis.isLoading} />)}
+          ) : (<EmptyState loading={kpis.isLoading} variant="chart" />)}
         </Section>
       </div>
     </main>
@@ -526,24 +533,51 @@ function Kpi({
   loading?: boolean
 }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-3.5 transition hover:border-slate-300">
+    <div className="fade-in group rounded-xl border border-slate-200 bg-white p-3.5 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md">
       <div className="flex items-center gap-2.5">
-        <div className={`shrink-0 rounded-lg p-2 ${iconBg}`}>
+        <div className={`shrink-0 rounded-lg p-2 ${iconBg} transition group-hover:scale-110`}>
           <Icon className={`h-4 w-4 ${iconColor}`} strokeWidth={2.5} />
         </div>
         <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">{label}</p>
       </div>
       <div className="mt-2.5">
-        <p className={`text-2xl font-bold tabular-nums tracking-tight ${valueColor ?? 'text-slate-900'}`}>
-          {loading ? <span className="text-slate-300">—</span> : value}
-          {extraValue && (
-            <span className="ml-1 text-sm font-medium text-slate-400">{extraValue}</span>
-          )}
-        </p>
-        {subtitle && <p className="mt-0.5 text-[11px] text-slate-400">{subtitle}</p>}
+        {loading ? (
+          <Skeleton className="h-7 w-20" />
+        ) : (
+          <p className={`text-2xl font-bold tabular-nums tracking-tight ${valueColor ?? 'text-slate-900'}`}>
+            <AnimatedKpiValue value={value} />
+            {extraValue && (
+              <span className="ml-1 text-sm font-medium text-slate-400">{extraValue}</span>
+            )}
+          </p>
+        )}
+        {subtitle ? (
+          <p className="mt-0.5 text-[11px] text-slate-400">{subtitle}</p>
+        ) : (
+          <p className="mt-0.5 h-[14px]" />
+        )}
       </div>
     </div>
   )
+}
+
+/**
+ * Anima un valor KPI numérico (e.g. "861", "20.5k", "40.3%") respetando el sufijo.
+ * Si el valor no es numérico (e.g. "—"), lo muestra tal cual.
+ */
+function AnimatedKpiValue({ value }: { value: string }) {
+  const m = value.match(/^([\d.,]+)\s*([%kKM]*\s*\w*)?$/)
+  if (!m) return <>{value}</>
+  const numStr = m[1].replace(/,/g, '')
+  const num = parseFloat(numStr)
+  const suffix = m[2] ?? ''
+  const isFloat = numStr.includes('.')
+  const animated = useCountUp(isFinite(num) ? num : 0, 700)
+  if (!isFinite(num)) return <>{value}</>
+  const formatted = isFloat
+    ? animated.toLocaleString('es', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+    : Math.round(animated).toLocaleString('es')
+  return <>{formatted}{suffix && <>{suffix}</>}</>
 }
 
 function Section({
@@ -564,16 +598,6 @@ function Section({
   )
 }
 
-function Empty({ loading }: { loading?: boolean }) {
-  return (
-    <div className="flex h-32 flex-col items-center justify-center gap-2 text-slate-400">
-      {loading ? <p className="text-sm">Cargando…</p> : (<>
-        <TrendingUp className="h-5 w-5" />
-        <p className="text-sm">Sin datos en este rango</p>
-      </>)}
-    </div>
-  )
-}
 
 function Legend({ items }: { items: { color: string; label: string; kind?: 'bar' | 'line' | 'dashed' }[] }) {
   return (

@@ -24,6 +24,9 @@ import { api } from '../../api/client'
 import DateRangePicker from '../../components/DateRangePicker'
 import CatalogAutocomplete from '../../components/CatalogAutocomplete'
 import { useCatalog } from '../../hooks/useCatalogs'
+import Skeleton from '../../components/Skeleton'
+import EmptyState from '../../components/EmptyState'
+import { useCountUp } from '../../hooks/useCountUp'
 
 // ───────── tipos ─────────
 
@@ -315,7 +318,9 @@ export default function HistogramasPage() {
               </ResponsiveContainer>
             </div>
           ) : (
-            <Empty loading={dist.isLoading} />
+            <EmptyState loading={dist.isLoading} variant="chart"
+              title="Sin lotes en este rango"
+              description="Cambia el periodo o quita los filtros" />
           )}
         </section>
 
@@ -426,7 +431,9 @@ export default function HistogramasPage() {
               </div>
             </>
           ) : (
-            <Empty loading={dist.isLoading} />
+            <EmptyState loading={dist.isLoading} variant="chart"
+              title="Sin lotes en este rango"
+              description="Cambia el periodo o quita los filtros" />
           )}
         </section>
 
@@ -525,21 +532,44 @@ function Kpi({
   label: string; value: string; subtitle?: string; valueColor?: string; loading?: boolean
 }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4">
+    <div className="fade-in group rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md">
       <div className="flex items-center gap-3">
-        <div className={`shrink-0 rounded-lg p-2.5 ${iconBg}`}>
+        <div className={`shrink-0 rounded-lg p-2.5 ${iconBg} transition group-hover:scale-110`}>
           <Icon className={`h-5 w-5 ${iconColor}`} strokeWidth={2} />
         </div>
         <div className="min-w-0 flex-1">
           <p className="truncate text-xs font-medium text-slate-500">{label}</p>
         </div>
       </div>
-      <p className={`mt-3 text-2xl font-bold tabular-nums tracking-tight ${valueColor ?? 'text-slate-900'}`}>
-        {loading ? <span className="text-slate-300">—</span> : value}
-      </p>
-      {subtitle && <p className="mt-0.5 text-xs text-slate-400">{subtitle}</p>}
+      {loading ? (
+        <Skeleton className="mt-3 h-7 w-24" />
+      ) : (
+        <p className={`mt-3 text-2xl font-bold tabular-nums tracking-tight ${valueColor ?? 'text-slate-900'}`}>
+          <AnimatedKpiValue value={value} />
+        </p>
+      )}
+      {subtitle ? (
+        <p className="mt-0.5 text-xs text-slate-400">{subtitle}</p>
+      ) : (
+        <p className="mt-0.5 h-[16px]" />
+      )}
     </div>
   )
+}
+
+function AnimatedKpiValue({ value }: { value: string }) {
+  const m = value.match(/^([\d.,]+)\s*([%\w\s]*)?$/)
+  if (!m) return <>{value}</>
+  const numStr = m[1].replace(/,/g, '')
+  const num = parseFloat(numStr)
+  const suffix = m[2] ?? ''
+  const isFloat = numStr.includes('.')
+  const animated = useCountUp(isFinite(num) ? num : 0, 700)
+  if (!isFinite(num)) return <>{value}</>
+  const formatted = isFloat
+    ? animated.toLocaleString('es', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+    : Math.round(animated).toLocaleString('es')
+  return <>{formatted}{suffix && <> {suffix}</>}</>
 }
 
 function LegendDot({ color, label }: { color: string; label: string }) {
@@ -569,13 +599,6 @@ function LegendLine({ color, label, dashed }: { color: string; label: string; da
   )
 }
 
-function Empty({ loading }: { loading?: boolean }) {
-  return (
-    <div className="flex h-40 items-center justify-center text-sm text-slate-400">
-      {loading ? 'Cargando…' : 'Sin datos en este rango / filtro'}
-    </div>
-  )
-}
 
 interface TooltipPayload { value?: number; payload?: Bucket }
 function BucketTooltip({ active, payload }: { active?: boolean; payload?: TooltipPayload[] }) {
