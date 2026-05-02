@@ -25,6 +25,8 @@ import { useAuth } from '../../contexts/AuthContext'
 import CatalogSelect from '../../components/CatalogSelect'
 import AttachmentsModal from '../../components/AttachmentsModal'
 import RecepcionDetalleModal from '../../components/RecepcionDetalleModal'
+import TopCardsAnalisis, { calcAnalysisStats } from './TopCardsAnalisis'
+import SidebarAnalisis from './SidebarAnalisis'
 import type {
   AnalysisRead,
   AnalysisUpsert,
@@ -185,7 +187,7 @@ export default function AnalisisFichaPage() {
     <div className="min-h-screen bg-slate-50 pb-24">
       {/* Sticky header compacto — solo lo esencial siempre visible */}
       <header className="sticky top-0 z-20 border-b border-slate-200 bg-white shadow-sm">
-        <div className="mx-auto max-w-6xl px-4 pb-2 pt-2">
+        <div className="mx-auto max-w-[1400px] px-4 pb-2 pt-2">
           {/* Línea 1: volver + título + estado + acciones (todo en una fila) */}
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <button
@@ -356,7 +358,7 @@ export default function AnalisisFichaPage() {
 
       {/* Mensajes */}
       {(save.isError || clientError) && (
-        <div className="mx-auto max-w-6xl px-4 pt-4">
+        <div className="mx-auto max-w-[1400px] px-4 pt-4">
           <p className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
             {clientError ??
               (save.error as AxiosError<{ detail?: string }>)?.response?.data?.detail ??
@@ -369,48 +371,70 @@ export default function AnalisisFichaPage() {
         <RecepcionDetalleModal ctx={ctx} onClose={() => setRecepcionModalOpen(false)} />
       )}
 
-      <main className="mx-auto max-w-6xl space-y-3 px-4 py-3">
-        {/* Toolbar de acciones — fuera del fieldset para que siga funcionando
-            aunque el formulario esté en modo lectura. */}
-        {ctx && (
-          <div className="flex flex-wrap items-center justify-end gap-2">
-            {ctx.product_type && (
-              <span className="mr-auto inline-flex items-center gap-1 rounded-lg border border-orange-200 bg-orange-50 px-3 py-2 text-xs font-bold uppercase tracking-wider text-orange-800 shadow-sm">
-                <span className="text-[10px] font-medium normal-case text-orange-600">
-                  Producto:
-                </span>
-                {ctx.product_type}
-              </span>
-            )}
-            <ActionButton
-              icon={Truck}
-              label="Datos recepción"
-              onClick={() => setRecepcionModalOpen(true)}
-              variant="cea"
-            />
-            <ActionButton
-              icon={ImageIcon}
-              label="Fotos y archivos"
-              onClick={() => setFotosModalOpen(true)}
-              variant="violet"
-            />
-          </div>
-        )}
+      <main className="mx-auto max-w-[1400px] space-y-4 px-4 py-4">
+        {/* 4 cards top: Progreso · Pendientes · Alertas · Score */}
+        {ctx && <TopCardsAnalisis stats={calcAnalysisStats(form)} />}
 
-        <fieldset
-          disabled={!isEditing}
-          className="space-y-3 transition disabled:cursor-default disabled:opacity-95"
-        >
-        <SectionCabecera form={form} update={update} />
-        <SectionFisicos form={form} update={update} />
-        <div className="grid gap-3 md:grid-cols-2">
-          <SectionOrganoleptico title="Crudo" id="crudo" state="crudo" form={form} update={update} />
-          <SectionOrganoleptico title="Cocido" id="cocido" state="cocido" form={form} update={update} />
+        {/* Layout 2 columnas: formulario (izq) + sidebar sticky (dcha) */}
+        <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
+          {/* Columna izquierda: toolbar + secciones del formulario */}
+          <div className="space-y-3 min-w-0">
+            {/* Toolbar de acciones — fuera del fieldset para seguir funcionando en modo lectura */}
+            {ctx && (
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                {ctx.product_type && (
+                  <span className="mr-auto inline-flex items-center gap-1 rounded-lg border border-orange-200 bg-orange-50 px-3 py-2 text-xs font-bold uppercase tracking-wider text-orange-800 shadow-sm">
+                    <span className="text-[10px] font-medium normal-case text-orange-600">
+                      Producto:
+                    </span>
+                    {ctx.product_type}
+                  </span>
+                )}
+                <ActionButton
+                  icon={Truck}
+                  label="Datos recepción"
+                  onClick={() => setRecepcionModalOpen(true)}
+                  variant="cea"
+                />
+                <ActionButton
+                  icon={ImageIcon}
+                  label="Fotos y archivos"
+                  onClick={() => setFotosModalOpen(true)}
+                  variant="violet"
+                />
+              </div>
+            )}
+
+            <fieldset
+              disabled={!isEditing}
+              className="space-y-3 transition disabled:cursor-default disabled:opacity-95"
+            >
+              <SectionCabecera form={form} update={update} />
+              <SectionFisicos form={form} update={update} />
+              <div className="grid gap-3 md:grid-cols-2">
+                <SectionOrganoleptico title="Crudo" id="crudo" state="crudo" form={form} update={update} />
+                <SectionOrganoleptico title="Cocido" id="cocido" state="cocido" form={form} update={update} />
+              </div>
+              <SectionMuestreos form={form} update={update} />
+              <SectionMiniHistograma form={form} update={update} />
+              <SectionDecision form={form} update={update} />
+            </fieldset>
+          </div>
+
+          {/* Columna derecha: sidebar sticky */}
+          <div className="lg:sticky lg:top-32 lg:self-start">
+            {ctx && (
+              <SidebarAnalisis
+                form={form}
+                analysisId={analysisId}
+                ctx={ctx}
+                stats={calcAnalysisStats(form)}
+                loadedAnalysis={loadById.data ?? loadByLot.data ?? null}
+                onOpenFiles={() => setFotosModalOpen(true)}
+              />
+            )}
+          </div>
         </div>
-        <SectionMuestreos form={form} update={update} />
-        <SectionMiniHistograma form={form} update={update} />
-        <SectionDecision form={form} update={update} />
-        </fieldset>
       </main>
 
       {fotosModalOpen && ctx && (
