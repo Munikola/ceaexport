@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { AxiosError } from 'axios'
 import {
@@ -51,6 +51,15 @@ function freshDefaults(): Partial<ReceptionCreate> {
   }
 }
 
+// ─── borradores en localStorage ───
+const DRAFT_KEY = 'cea-recepcion-draft-v1'
+
+interface DraftPayload {
+  reception: Partial<ReceptionCreate>
+  lots: LotDraft[]
+  savedAt: string
+}
+
 const STEPS = [
   { id: 'datos',     label: 'Datos llegada',      icon: Calendar },
   { id: 'camion',    label: 'Información camión', icon: Truck },
@@ -77,6 +86,52 @@ export default function RecepcionPage() {
     () => (cameraFile ? URL.createObjectURL(cameraFile) : null),
     [cameraFile],
   )
+
+  // Borradores en localStorage — el operador puede salir y retomar
+  const [pendingDraft, setPendingDraft] = useState<DraftPayload | null>(null)
+  const [draftToast, setDraftToast] = useState<string | null>(null)
+
+  useEffect(() => {
+    // Al montar: si hay borrador y el form está vacío, ofrecer continuar
+    const raw = localStorage.getItem(DRAFT_KEY)
+    if (!raw) return
+    try {
+      const draft = JSON.parse(raw) as DraftPayload
+      const isFormEmpty =
+        !reception.plant_id &&
+        lots.length === 0 &&
+        !reception.truck_id &&
+        !reception.driver_id
+      if (isFormEmpty && (draft.reception.plant_id || draft.lots.length > 0)) {
+        setPendingDraft(draft)
+      }
+    } catch {
+      localStorage.removeItem(DRAFT_KEY)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const saveDraft = () => {
+    const draft: DraftPayload = {
+      reception,
+      lots,
+      savedAt: new Date().toISOString(),
+    }
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(draft))
+    setDraftToast('Borrador guardado en este dispositivo')
+    setTimeout(() => setDraftToast(null), 2500)
+  }
+
+  const loadDraft = (d: DraftPayload) => {
+    setReception(d.reception)
+    setLots(d.lots)
+    setPendingDraft(null)
+  }
+
+  const discardDraft = () => {
+    localStorage.removeItem(DRAFT_KEY)
+    setPendingDraft(null)
+  }
 
   // Catálogos para mostrar nombres en el panel resumen y la tabla de lotes
   const plants = useCatalog('plants')
@@ -156,8 +211,8 @@ export default function RecepcionPage() {
     lots.length > 0 &&
     lots.every((l) => !!l.lot_code && !!l.supplier_id && !!l.product_type && (l.received_lbs ?? 0) > 0)
 
-  const handleSubmit = async (status: 'borrador' | 'final' = 'final') => {
-    if (status === 'final' && !canSubmit) return
+  const handleSubmit = async () => {
+    if (!canSubmit) return
     const payload = {
       ...reception,
       lots: lots.map((l) => ({
@@ -205,6 +260,8 @@ export default function RecepcionPage() {
       setCameraFile(null)
       setActiveStep('datos')
       setLastSaved({ id: created.reception_id, lotCount: created.reception_lots.length })
+      // Borrar borrador local — la recepción ya está en BD
+      localStorage.removeItem(DRAFT_KEY)
       window.scrollTo({ top: 0, behavior: 'smooth' })
     } catch {
       // Error visible en el banner
@@ -242,15 +299,15 @@ export default function RecepcionPage() {
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => handleSubmit('borrador')}
-              disabled={submit.isPending}
-              className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-50"
+              onClick={saveDraft}
+              className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
+              title="Guarda lo escrito en este dispositivo para retomarlo después (no envía a servidor)"
             >
               <ArrowDownToLine className="h-4 w-4" />
               Guardar borrador
             </button>
             <button
-              onClick={() => handleSubmit('final')}
+              onClick={handleSubmit}
               disabled={!canSubmit || submit.isPending}
               className="flex items-center gap-1.5 rounded-lg bg-cea-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-cea-800 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none"
             >
@@ -287,6 +344,45 @@ export default function RecepcionPage() {
         <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
           {(submit.error as AxiosError<{ detail?: string }>)?.response?.data?.detail ??
             'Error al guardar la recepción'}
+        </div>
+      )}
+
+      {/* Toast de borrador guardado */}
+      {draftToast && (
+        <div className="fade-in fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full bg-slate-900 px-5 py-2.5 text-sm font-medium text-white shadow-lg">
+          ✓ {draftToast}
+        </div>
+      )}
+
+      {/* Banner de borrador encontrado al cargar */}
+      {pendingDraft && (
+        <div className="fade-in flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm">
+          <div className="flex items-center gap-2 text-amber-900">
+            <ArrowDownToLine className="h-5 w-5" />
+            <span>
+              Tienes una recepción a medias del{' '}
+              <strong>
+                {new Date(pendingDraft.savedAt).toLocaleString('es', {
+                  day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
+                })}
+              </strong>{' '}
+              ({pendingDraft.lots.length} lote{pendingDraft.lots.length !== 1 ? 's' : ''}).
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => loadDraft(pendingDraft)}
+              className="rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-700"
+            >
+              Continuar
+            </button>
+            <button
+              onClick={discardDraft}
+              className="rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-xs font-medium text-amber-800 hover:bg-amber-50"
+            >
+              Descartar
+            </button>
+          </div>
         </div>
       )}
 
