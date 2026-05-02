@@ -305,7 +305,8 @@ export default function DashboardPage() {
                   <XAxis type="number" tick={{ fontSize: 10, fill: C.muted }}
                     axisLine={false} tickLine={false} tickFormatter={(v) => fmtCompact(v)} />
                   <YAxis dataKey="supplier" type="category"
-                    tick={{ fontSize: 10, fill: C.ink }} axisLine={false} tickLine={false} width={110} />
+                    tick={{ fontSize: 10, fill: C.ink }} axisLine={false} tickLine={false}
+                    width={140} interval={0} />
                   <Tooltip cursor={{ fill: C.primaryLight }}
                     formatter={(v: number) => [`${Math.round(v).toLocaleString('es')} lbs`, 'Volumen']} />
                   <Bar dataKey="total_lbs" fill={C.primary} radius={[0, 4, 4, 0]} />
@@ -325,7 +326,8 @@ export default function DashboardPage() {
                   <XAxis type="number" tick={{ fontSize: 10, fill: C.muted }}
                     axisLine={false} tickLine={false} unit="%" />
                   <YAxis dataKey="defect" type="category"
-                    tick={{ fontSize: 10, fill: C.ink }} axisLine={false} tickLine={false} width={130} />
+                    tick={{ fontSize: 10, fill: C.ink }} axisLine={false} tickLine={false}
+                    width={160} interval={0} />
                   <Tooltip cursor={{ fill: C.warnLight }} formatter={(v: number) => `${v}%`} />
                   <Bar dataKey="avg_pct" fill={C.warn} radius={[0, 4, 4, 0]} />
                 </ComposedChart>

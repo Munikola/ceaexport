@@ -172,25 +172,32 @@ def dashboard_top_suppliers_by_defects(
     start_date: date | None = Query(None),
     end_date: date | None = Query(None),
     limit: int = Query(10, ge=1, le=50),
-    min_lots: int = Query(3, ge=1),
+    min_lots: int = Query(1, ge=1),
 ):
-    """KPI de proveedor agregando varios meses dentro del rango. Usa mv_supplier_kpis."""
+    """Ranking de proveedores con peor % defectos en el periodo.
+
+    Va directo contra quality_analyses para no depender del refresh de
+    mv_supplier_kpis. Más robusto.
+    """
     start, end = _default_range(start_date, end_date)
 
     rows = db.execute(
         text(
             """
             SELECT
-                supplier_name,
-                ROUND(AVG(avg_defect_pct)::numeric, 1) AS avg_defect_pct,
-                SUM(lots_count)::int                   AS lots,
-                SUM(total_lbs)                         AS total_lbs
-            FROM mv_supplier_kpis
-            WHERE month BETWEEN DATE_TRUNC('month', :start::date)::date AND :end
-              AND supplier_name IS NOT NULL
-              AND avg_defect_pct IS NOT NULL
-            GROUP BY supplier_name
-            HAVING SUM(lots_count) >= :min_lots
+                s.supplier_name,
+                ROUND(AVG(qa.global_defect_percentage)::numeric, 1) AS avg_defect_pct,
+                COUNT(DISTINCT l.lot_id)::int                       AS lots,
+                COALESCE(SUM(rl.received_lbs), 0)                   AS total_lbs
+            FROM quality_analyses qa
+            JOIN analysis_lots al ON qa.analysis_id = al.analysis_id
+            JOIN lots l           ON al.lot_id = l.lot_id
+            JOIN suppliers s      ON l.supplier_id = s.supplier_id
+            LEFT JOIN reception_lots rl ON l.lot_id = rl.lot_id
+            WHERE qa.analysis_date BETWEEN :start AND :end
+              AND qa.global_defect_percentage IS NOT NULL
+            GROUP BY s.supplier_name
+            HAVING COUNT(DISTINCT l.lot_id) >= :min_lots
             ORDER BY avg_defect_pct DESC NULLS LAST
             LIMIT :limit
             """
