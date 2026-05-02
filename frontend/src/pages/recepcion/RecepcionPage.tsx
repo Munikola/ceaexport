@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { AxiosError } from 'axios'
 import {
@@ -21,6 +21,7 @@ import {
   Clock,
   Calendar,
   ScanLine,
+  X,
 } from 'lucide-react'
 
 import { api } from '../../api/client'
@@ -68,6 +69,14 @@ export default function RecepcionPage() {
   const [creating, setCreating] = useState(false)
   const [activeStep, setActiveStep] = useState<StepId>('datos')
   const [lastSaved, setLastSaved] = useState<{ id: number; lotCount: number } | null>(null)
+
+  // Foto del camión (se sube al crear la recepción, vinculada al primer lote)
+  const cameraInputRef = useRef<HTMLInputElement | null>(null)
+  const [cameraFile, setCameraFile] = useState<File | null>(null)
+  const cameraPreviewUrl = useMemo(
+    () => (cameraFile ? URL.createObjectURL(cameraFile) : null),
+    [cameraFile],
+  )
 
   // Catálogos para mostrar nombres en el panel resumen y la tabla de lotes
   const plants = useCatalog('plants')
@@ -173,8 +182,27 @@ export default function RecepcionPage() {
 
     try {
       const created = await submit.mutateAsync(payload)
+      // Si hay foto del camión, subirla al primer lote creado.
+      const firstLotId = created.reception_lots?.[0]?.lot_id
+      if (cameraFile && firstLotId) {
+        try {
+          const fd = new FormData()
+          fd.append('file', cameraFile)
+          fd.append('lot_id', String(firstLotId))
+          fd.append('reception_id', String(created.reception_id))
+          fd.append('type_code', 'foto_camion')
+          fd.append('comment', 'Foto del camión en recepción')
+          await api.post('/api/attachments', fd, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+          })
+        } catch {
+          // Si falla la foto, no abortamos: la recepción ya está creada.
+          // El error se ve por consola del browser; idealmente loguearlo a Sentry.
+        }
+      }
       setReception(freshDefaults())
       setLots([])
+      setCameraFile(null)
       setActiveStep('datos')
       setLastSaved({ id: created.reception_id, lotCount: created.reception_lots.length })
       window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -383,37 +411,40 @@ export default function RecepcionPage() {
           {/* Bloque 3: Inspección */}
           <Block num={3} title="Inspección del camión">
             <div className="space-y-3">
-              <ConditionRow
-                icon={Truck}
-                label="Estado del camión"
-                catalog="condition-levels-truck"
-                value={reception.truck_condition_id}
-                onChange={(id) => set('truck_condition_id', id)}
-              />
-              <ConditionRow
-                icon={Snowflake}
-                label="Estado del hielo"
-                catalog="condition-levels-ice"
-                value={reception.ice_condition_id}
-                onChange={(id) => set('ice_condition_id', id)}
-              />
-              <ConditionRow
-                icon={SprayCan}
-                label="Higiene"
-                catalog="condition-levels-hygiene"
-                value={reception.hygiene_condition_id}
-                onChange={(id) => set('hygiene_condition_id', id)}
-              />
+              {/* Grid: chips de condiciones izq + dropzone de foto dcha */}
+              <div className="grid gap-4 lg:grid-cols-[1fr_220px]">
+                <div className="space-y-3">
+                  <ConditionRow
+                    icon={Truck}
+                    label="Estado del camión"
+                    catalog="condition-levels-truck"
+                    value={reception.truck_condition_id}
+                    onChange={(id) => set('truck_condition_id', id)}
+                  />
+                  <ConditionRow
+                    icon={Snowflake}
+                    label="Estado del hielo"
+                    catalog="condition-levels-ice"
+                    value={reception.ice_condition_id}
+                    onChange={(id) => set('ice_condition_id', id)}
+                  />
+                  <ConditionRow
+                    icon={SprayCan}
+                    label="Higiene"
+                    catalog="condition-levels-hygiene"
+                    value={reception.hygiene_condition_id}
+                    onChange={(id) => set('hygiene_condition_id', id)}
+                  />
+                </div>
 
-              <div className="flex items-center gap-3 pt-1">
-                <button
-                  type="button"
-                  className="flex items-center gap-1.5 rounded-lg border border-dashed border-slate-300 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-500 hover:border-slate-400 hover:text-slate-700"
-                  title="Próximamente: foto del camión"
-                >
-                  <Camera className="h-4 w-4" /> Añadir foto del camión
-                </button>
-                <p className="text-[11px] text-slate-400">(opcional)</p>
+                {/* Dropzone de foto del camión */}
+                <CameraDropzone
+                  file={cameraFile}
+                  previewUrl={cameraPreviewUrl}
+                  inputRef={cameraInputRef}
+                  onPick={(f) => setCameraFile(f)}
+                  onClear={() => setCameraFile(null)}
+                />
               </div>
 
               {hasRisk && (
@@ -874,5 +905,77 @@ function CondBadge({
         {name ?? 'Sin definir'}
       </span>
     </div>
+  )
+}
+
+/**
+ * Dropzone para foto del camión. Acepta drag & drop, click, y desde móvil
+ * abre la cámara directamente (capture="environment"). Muestra preview con
+ * botón de quitar.
+ */
+function CameraDropzone({
+  file, previewUrl, inputRef, onPick, onClear,
+}: {
+  file: File | null
+  previewUrl: string | null
+  inputRef: React.MutableRefObject<HTMLInputElement | null>
+  onPick: (f: File) => void
+  onClear: () => void
+}) {
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    const f = e.dataTransfer.files?.[0]
+    if (f && f.type.startsWith('image/')) onPick(f)
+  }
+
+  if (file && previewUrl) {
+    return (
+      <div className="relative overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
+        <img src={previewUrl} alt="Foto del camión" className="h-full w-full object-cover" style={{ minHeight: 140 }} />
+        <button
+          type="button"
+          onClick={onClear}
+          className="absolute right-1.5 top-1.5 rounded-full bg-black/60 p-1.5 text-white hover:bg-black/80"
+          title="Quitar foto"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+        <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between bg-gradient-to-t from-black/60 to-transparent p-2 text-[11px] text-white">
+          <span className="truncate">{file.name}</span>
+          <span className="shrink-0 text-white/70">{Math.round(file.size / 1024)} KB</span>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => inputRef.current?.click()}
+      onDragOver={(e) => e.preventDefault()}
+      onDrop={handleDrop}
+      className="group flex h-full min-h-[140px] flex-col items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 px-3 py-4 text-center transition hover:border-cea-500 hover:bg-cea-50"
+    >
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0]
+          if (f) onPick(f)
+          e.target.value = ''
+        }}
+      />
+      <div className="rounded-full bg-white p-2 shadow-sm group-hover:scale-110 transition">
+        <Camera className="h-5 w-5 text-slate-500 group-hover:text-cea-700" />
+      </div>
+      <p className="text-xs font-semibold text-slate-700 group-hover:text-cea-700">
+        Añadir foto
+      </p>
+      <p className="text-[10px] text-slate-400">Foto del camión</p>
+      <p className="hidden text-[10px] text-slate-400 lg:block">o arrastra una imagen</p>
+    </button>
   )
 }
