@@ -8,6 +8,7 @@ import { AxiosError } from 'axios'
 import { useAuth } from '../../contexts/AuthContext'
 import PasswordInput from '../../components/PasswordInput'
 import ceaLogo from '../../assets/cea-logo.jpeg'
+import loginBg from '../../assets/login-bg.jpeg'
 
 export default function LoginPage() {
   const { login, isAuthenticated, loading } = useAuth()
@@ -48,13 +49,21 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen lg:flex">
-      {/* ── Panel izquierdo: hero ───────────────────────────────── */}
-      <aside className="relative hidden flex-col justify-between overflow-hidden bg-gradient-to-br from-cea-950 via-cea-900 to-cea-800 p-10 text-white lg:flex lg:w-1/2 xl:w-[55%]">
-        {/* Decoración de fondo: blobs + dotted pattern */}
+      {/* ── Panel izquierdo: hero con foto de camarones de fondo ─── */}
+      <aside className="relative hidden flex-col justify-between overflow-hidden p-10 text-white lg:flex lg:w-1/2 xl:w-[55%]">
+        {/* Imagen de fondo */}
+        <img
+          src={loginBg}
+          alt=""
+          aria-hidden="true"
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+        {/* Overlay azul corporativo para legibilidad */}
+        <div className="absolute inset-0 bg-gradient-to-br from-cea-950/95 via-cea-900/90 to-cea-800/85" />
+        {/* Decoración encima del overlay */}
         <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -right-32 -top-32 h-[500px] w-[500px] rounded-full bg-cea-600/30 blur-3xl" />
-          <div className="absolute -bottom-40 -left-32 h-[500px] w-[500px] rounded-full bg-amber-500/15 blur-3xl" />
-          {/* Dotted pattern arriba a la derecha */}
+          <div className="absolute -right-32 -top-32 h-[500px] w-[500px] rounded-full bg-cea-600/20 blur-3xl" />
+          <div className="absolute -bottom-40 -left-32 h-[500px] w-[500px] rounded-full bg-amber-500/10 blur-3xl" />
           <svg
             className="absolute right-8 top-8 opacity-10"
             width="180" height="120" viewBox="0 0 180 120" fill="none"
@@ -70,13 +79,6 @@ export default function LoginPage() {
                 />
               )),
             )}
-          </svg>
-          {/* Camarón silueta grande SVG decorativo */}
-          <svg
-            className="absolute bottom-20 right-10 opacity-[0.07]"
-            width="320" height="320" viewBox="0 0 100 100" fill="white"
-          >
-            <path d="M85 35c-3-8-12-12-20-10l-25 5c-8 2-15 8-18 16-3 9 1 19 9 24l8 5c4 2 9 1 12-2l4-4c2-2 5-3 8-3l8 1c8 1 15-3 17-11s1-15-3-21z M30 55c-2 2-2 5 0 7s5 2 7 0 2-5 0-7-5-2-7 0z" />
           </svg>
         </div>
 
