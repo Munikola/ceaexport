@@ -11,6 +11,7 @@ import {
   SprayCan,
   Thermometer,
   Camera,
+  ImagePlus,
   Pencil,
   Trash2,
   Copy,
@@ -80,7 +81,6 @@ export default function RecepcionPage() {
   const [lastSaved, setLastSaved] = useState<{ id: number; lotCount: number } | null>(null)
 
   // Foto del camión (se sube al crear la recepción, vinculada al primer lote)
-  const cameraInputRef = useRef<HTMLInputElement | null>(null)
   const [cameraFile, setCameraFile] = useState<File | null>(null)
   const cameraPreviewUrl = useMemo(
     () => (cameraFile ? URL.createObjectURL(cameraFile) : null),
@@ -537,7 +537,6 @@ export default function RecepcionPage() {
                 <CameraDropzone
                   file={cameraFile}
                   previewUrl={cameraPreviewUrl}
-                  inputRef={cameraInputRef}
                   onPick={(f) => setCameraFile(f)}
                   onClear={() => setCameraFile(null)}
                 />
@@ -1005,23 +1004,31 @@ function CondBadge({
 }
 
 /**
- * Dropzone para foto del camión. Acepta drag & drop, click, y desde móvil
- * abre la cámara directamente (capture="environment"). Muestra preview con
- * botón de quitar.
+ * Dropzone para foto del camión. Permite tomar la foto con la cámara
+ * (capture="environment") o elegir un archivo existente. En iPad ambas
+ * opciones son útiles. Acepta drag & drop en escritorio.
  */
 function CameraDropzone({
-  file, previewUrl, inputRef, onPick, onClear,
+  file, previewUrl, onPick, onClear,
 }: {
   file: File | null
   previewUrl: string | null
-  inputRef: React.MutableRefObject<HTMLInputElement | null>
   onPick: (f: File) => void
   onClear: () => void
 }) {
+  const cameraRef = useRef<HTMLInputElement | null>(null)
+  const galleryRef = useRef<HTMLInputElement | null>(null)
+
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault()
     const f = e.dataTransfer.files?.[0]
     if (f && f.type.startsWith('image/')) onPick(f)
+  }
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0]
+    if (f) onPick(f)
+    e.target.value = ''
   }
 
   if (file && previewUrl) {
@@ -1045,33 +1052,48 @@ function CameraDropzone({
   }
 
   return (
-    <button
-      type="button"
-      onClick={() => inputRef.current?.click()}
+    <div
       onDragOver={(e) => e.preventDefault()}
       onDrop={handleDrop}
-      className="group flex h-full min-h-[140px] flex-col items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 px-3 py-4 text-center transition hover:border-cea-500 hover:bg-cea-50"
+      className="flex h-full min-h-[140px] flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 px-3 py-4 text-center"
     >
       <input
-        ref={inputRef}
+        ref={cameraRef}
         type="file"
         accept="image/*"
         capture="environment"
         className="hidden"
-        onChange={(e) => {
-          const f = e.target.files?.[0]
-          if (f) onPick(f)
-          e.target.value = ''
-        }}
+        onChange={handleChange}
       />
-      <div className="rounded-full bg-white p-2 shadow-sm group-hover:scale-110 transition">
-        <Camera className="h-5 w-5 text-slate-500 group-hover:text-cea-700" />
-      </div>
-      <p className="text-xs font-semibold text-slate-700 group-hover:text-cea-700">
-        Añadir foto
+      <input
+        ref={galleryRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleChange}
+      />
+      <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+        Foto del camión
       </p>
-      <p className="text-[10px] text-slate-400">Foto del camión</p>
+      <div className="flex flex-wrap items-center justify-center gap-2">
+        <button
+          type="button"
+          onClick={() => cameraRef.current?.click()}
+          className="flex items-center gap-1.5 rounded-lg bg-cea-700 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-cea-800 active:scale-95"
+        >
+          <Camera className="h-4 w-4" />
+          Tomar foto
+        </button>
+        <button
+          type="button"
+          onClick={() => galleryRef.current?.click()}
+          className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 active:scale-95"
+        >
+          <ImagePlus className="h-4 w-4" />
+          Elegir archivo
+        </button>
+      </div>
       <p className="hidden text-[10px] text-slate-400 lg:block">o arrastra una imagen</p>
-    </button>
+    </div>
   )
 }

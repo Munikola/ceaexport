@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { AxiosError } from 'axios'
-import { Image as ImageIcon, Trash2, Upload, X, Video, FileText } from 'lucide-react'
+import { Image as ImageIcon, Trash2, Upload, X, Video, FileText, Camera } from 'lucide-react'
 import { api } from '../api/client'
 import type { AttachmentRead } from '../types/domain'
 
@@ -27,6 +27,7 @@ export default function AttachmentsSection({
 }: Props) {
   const qc = useQueryClient()
   const fileInput = useRef<HTMLInputElement>(null)
+  const cameraInput = useRef<HTMLInputElement>(null)
   const [dragOver, setDragOver] = useState(false)
   const [preview, setPreview] = useState<AttachmentRead | null>(null)
 
@@ -97,15 +98,37 @@ export default function AttachmentsSection({
             </p>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={() => fileInput.current?.click()}
-          disabled={upload.isPending}
-          className="flex items-center gap-1.5 rounded-lg bg-cea-700 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-cea-800 disabled:bg-slate-300"
-        >
-          <Upload className="h-4 w-4" />
-          {upload.isPending ? 'Subiendo…' : 'Añadir'}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => cameraInput.current?.click()}
+            disabled={upload.isPending}
+            className="flex items-center gap-1.5 rounded-lg bg-cea-700 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-cea-800 disabled:bg-slate-300"
+          >
+            <Camera className="h-4 w-4" />
+            <span className="hidden sm:inline">Tomar foto</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => fileInput.current?.click()}
+            disabled={upload.isPending}
+            className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 disabled:bg-slate-100"
+          >
+            <Upload className="h-4 w-4" />
+            {upload.isPending ? 'Subiendo…' : <span className="hidden sm:inline">Añadir archivos</span>}
+          </button>
+        </div>
+        <input
+          ref={cameraInput}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          className="hidden"
+          onChange={(e) => {
+            onFiles(e.target.files)
+            e.target.value = ''
+          }}
+        />
         <input
           ref={fileInput}
           type="file"
@@ -140,15 +163,28 @@ export default function AttachmentsSection({
         className={`p-6 transition ${dragOver ? 'bg-cea-50' : ''}`}
       >
         {items.length === 0 ? (
-          <button
-            type="button"
-            onClick={() => fileInput.current?.click()}
-            className="flex w-full flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 py-10 text-sm text-slate-500 transition hover:border-cea-400 hover:bg-cea-50/40"
-          >
-            <Upload className="mb-2 h-6 w-6 text-slate-400" />
+          <div className="flex w-full flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 py-8 text-sm text-slate-500">
+            <Upload className="h-6 w-6 text-slate-400" />
             <span className="font-medium">Arrastra fotos o videos aquí</span>
-            <span className="text-xs text-slate-400">o pulsa para seleccionarlos</span>
-          </button>
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <button
+                type="button"
+                onClick={() => cameraInput.current?.click()}
+                className="flex items-center gap-1.5 rounded-lg bg-cea-700 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-cea-800 active:scale-95"
+              >
+                <Camera className="h-4 w-4" />
+                Tomar foto
+              </button>
+              <button
+                type="button"
+                onClick={() => fileInput.current?.click()}
+                className="flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 active:scale-95"
+              >
+                <Upload className="h-4 w-4" />
+                Elegir archivos
+              </button>
+            </div>
+          </div>
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
             {items.map((a) => (
