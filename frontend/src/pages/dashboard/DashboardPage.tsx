@@ -113,23 +113,24 @@ function withMA7(data: LotsPerDay[]): (LotsPerDay & { ma7: number | null })[] {
   })
 }
 
-// ───────── paleta sobria ─────────
+// ───────── Corporate Premium palette ─────────
 
 const C = {
-  primary: '#1e40af',
-  primarySoft: '#3b82f6',
-  primaryLight: '#eff6ff',
+  primary: '#1e3a8a',       // navy elegante
+  primarySoft: '#3151a7',
+  primaryLight: '#eef2ff',
+  secondary: '#4338ca',     // índigo profundo
   ink: '#0f172a',
-  muted: '#64748b',
-  border: '#e2e8f0',
-  ok: '#16a34a',
-  okLight: '#dcfce7',
-  warn: '#f59e0b',
-  warnLight: '#fef3c7',
-  danger: '#dc2626',
-  dangerLight: '#fee2e2',
-  neutral: '#94a3b8',
-  neutralLight: '#f1f5f9',
+  muted: '#737373',         // warm gray
+  border: '#e7e5e4',
+  ok: '#0d9488',            // teal sage
+  okLight: '#ccfbf1',
+  warn: '#c2410c',          // naranja terroso
+  warnLight: '#ffedd5',
+  danger: '#9f1239',        // borgoña
+  dangerLight: '#ffe4e6',
+  neutral: '#737373',
+  neutralLight: '#f5f5f4',
 }
 
 // ───────── página ─────────
@@ -203,43 +204,43 @@ export default function DashboardPage() {
       {/* ── KPIs ──────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
         <Kpi
-          icon={Package} iconBg="bg-blue-50" iconColor="text-blue-600"
+          icon={Package} iconBg="bg-blue-100" iconColor="text-blue-900"
           label="Lotes recibidos" value={k?.total_lots?.toLocaleString('es') ?? '—'}
           subtitle="Total en el período" loading={kpis.isLoading}
         />
         <Kpi
-          icon={Scale} iconBg="bg-slate-50" iconColor="text-slate-600"
+          icon={Scale} iconBg="bg-stone-100" iconColor="text-stone-700"
           label="Libras recibidas" value={k ? fmtCompact(k.total_lbs) : '—'}
           subtitle="Total en el período" loading={kpis.isLoading}
         />
         <Kpi
-          icon={AlertTriangle} iconBg="bg-rose-50" iconColor="text-rose-600"
+          icon={AlertTriangle} iconBg="bg-rose-100" iconColor="text-rose-800"
           label="% Defectos" value={k ? `${k.avg_defect_pct}%` : '—'}
           subtitle="Promedio del período"
-          valueColor={k && k.avg_defect_pct > 40 ? 'text-rose-600' : undefined}
+          valueColor={k && k.avg_defect_pct > 40 ? 'text-rose-800' : undefined}
           loading={kpis.isLoading}
         />
         <Kpi
-          icon={FlaskConical} iconBg="bg-purple-50" iconColor="text-purple-600"
+          icon={FlaskConical} iconBg="bg-indigo-100" iconColor="text-indigo-700"
           label="SO₂ promedio (ppm)" value={k ? `${k.avg_so2}` : '—'}
           subtitle="Promedio del período" loading={kpis.isLoading}
         />
         <Kpi
-          icon={CheckCircle} iconBg="bg-emerald-50" iconColor="text-emerald-600"
+          icon={CheckCircle} iconBg="bg-teal-50" iconColor="text-teal-700"
           label="Aceptados"
           value={k?.accepted_lots?.toLocaleString('es') ?? '—'}
           extraValue={k && k.total_lots > 0 ? `(${k.accepted_pct}%)` : undefined}
-          subtitle="Total" valueColor="text-emerald-700" loading={kpis.isLoading}
+          subtitle="Total" valueColor="text-teal-700" loading={kpis.isLoading}
         />
         <Kpi
-          icon={XCircle} iconBg="bg-rose-50" iconColor="text-rose-600"
+          icon={XCircle} iconBg="bg-rose-100" iconColor="text-rose-800"
           label="Rechazados"
           value={k?.rejected_lots?.toLocaleString('es') ?? '—'}
           extraValue={k && k.total_lots > 0 ? `(${k.rejected_pct}%)` : undefined}
-          subtitle="Total" valueColor="text-rose-600" loading={kpis.isLoading}
+          subtitle="Total" valueColor="text-rose-800" loading={kpis.isLoading}
         />
         <Kpi
-          icon={HelpCircle} iconBg="bg-slate-100" iconColor="text-slate-500"
+          icon={HelpCircle} iconBg="bg-stone-100" iconColor="text-stone-500"
           label="Sin decisión"
           value={k?.sin_decision_lots?.toLocaleString('es') ?? '—'}
           extraValue={k && k.total_lots > 0 ? `(${Math.round((k.sin_decision_lots / k.total_lots) * 100)}%)` : undefined}
@@ -365,7 +366,7 @@ export default function DashboardPage() {
                         <td className="py-1.5">
                           <div className="flex items-center gap-2">
                             <div className="h-1.5 w-16 overflow-hidden rounded-full bg-rose-100">
-                              <div className="h-full rounded-full bg-rose-500" style={{ width: `${pct}%` }} />
+                              <div className="h-full rounded-full bg-rose-800" style={{ width: `${pct}%` }} />
                             </div>
                             <span className="tabular-nums text-slate-700">{s.avg_defect_pct}%</span>
                           </div>
@@ -385,7 +386,7 @@ export default function DashboardPage() {
         <Section
           title={
             <span className="flex items-center gap-2">
-              <Bell className="h-4 w-4 text-amber-600" /> Alertas operativas
+              <Bell className="h-4 w-4 text-orange-700" /> Alertas operativas
             </span>
           }
           subtitle="Reglas en /admin/alertas"
@@ -404,7 +405,7 @@ export default function DashboardPage() {
             </ul>
           ) : (
             <div className="flex h-32 flex-col items-center justify-center gap-1 text-slate-400">
-              <CheckCircle className="h-5 w-5 text-emerald-500" />
+              <CheckCircle className="h-5 w-5 text-teal-600" />
               <p className="text-xs">Sin alertas activas</p>
               <Link to="/admin/alertas" className="text-[11px] text-cea-600 hover:underline">
                 Configurar reglas
@@ -453,8 +454,8 @@ export default function DashboardPage() {
                         </td>
                         <td className="py-2 text-right">
                           <span className={`rounded px-1.5 py-0.5 font-semibold tabular-nums ${
-                            lot.severity === 'critico' ? 'bg-rose-50 text-rose-700' :
-                            lot.severity === 'alto'    ? 'bg-amber-50 text-amber-700' :
+                            lot.severity === 'critico' ? 'bg-rose-100 text-rose-800' :
+                            lot.severity === 'alto'    ? 'bg-orange-100 text-orange-700' :
                                                          'text-slate-700'
                           }`}>
                             {lot.pct_defects}%
@@ -666,9 +667,9 @@ function BreakdownRow({ label, value, total, color }: {
 
 function SeverityIcon({ severity }: { severity: OperationalAlert['severity'] }) {
   const map: Record<string, string> = {
-    critical: 'text-rose-600 bg-rose-100',
-    warn: 'text-amber-600 bg-amber-100',
-    info: 'text-slate-500 bg-slate-100',
+    critical: 'text-rose-800 bg-rose-100',
+    warn: 'text-orange-700 bg-orange-100',
+    info: 'text-stone-500 bg-stone-100',
   }
   const cls = map[severity ?? 'info'] ?? map.info
   return (
@@ -680,10 +681,10 @@ function SeverityIcon({ severity }: { severity: OperationalAlert['severity'] }) 
 
 function SeverityBadge({ severity }: { severity: WorstLot['severity'] }) {
   const map: Record<string, { bg: string; text: string; label: string }> = {
-    critico: { bg: 'bg-rose-500', text: 'text-white', label: 'Crítico' },
-    alto:    { bg: 'bg-amber-500', text: 'text-white', label: 'Alto' },
-    medio:   { bg: 'bg-slate-300', text: 'text-slate-700', label: 'Medio' },
-    normal:  { bg: 'bg-slate-100', text: 'text-slate-500', label: 'Normal' },
+    critico: { bg: 'bg-rose-800', text: 'text-white', label: 'Crítico' },
+    alto:    { bg: 'bg-orange-700', text: 'text-white', label: 'Alto' },
+    medio:   { bg: 'bg-stone-300', text: 'text-stone-700', label: 'Medio' },
+    normal:  { bg: 'bg-stone-100', text: 'text-stone-500', label: 'Normal' },
   }
   const cfg = map[severity] ?? map.normal
   return (

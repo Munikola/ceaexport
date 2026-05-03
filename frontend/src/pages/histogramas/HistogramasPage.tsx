@@ -80,23 +80,23 @@ interface DistResp {
   }
 }
 
-// ───────── paleta ─────────
+// ───────── Corporate Premium palette ─────────
 
 const COLOR = {
-  critico: '#dc2626',
-  criticoSoft: '#fee2e2',
-  aceptable: '#f59e0b',
-  aceptableSoft: '#fef3c7',
-  optimo: '#16a34a',
-  optimoSoft: '#dcfce7',
+  critico: '#9f1239',         // borgoña
+  criticoSoft: '#ffe4e6',
+  aceptable: '#c2410c',       // naranja terroso
+  aceptableSoft: '#ffedd5',
+  optimo: '#0d9488',          // teal sage
+  optimoSoft: '#ccfbf1',
   acumulado: '#0f172a',
-  media: '#94a3b8',
-  objetivo: '#16a34a',
+  media: '#737373',           // warm gray
+  objetivo: '#0d9488',
   ink: '#0f172a',
-  muted: '#64748b',
-  border: '#e2e8f0',
-  primary: '#7c3aed',
-  primarySoft: '#ede9fe',
+  muted: '#737373',
+  border: '#e7e5e4',
+  primary: '#4338ca',         // índigo profundo
+  primarySoft: '#e0e7ff',
 }
 
 function isoDaysAgo(days: number): string {
@@ -144,7 +144,7 @@ export default function HistogramasPage() {
       {/* ── Header ─────────────────────────────────────────────── */}
       <header className="flex flex-wrap items-end justify-between gap-3 border-b border-slate-200 pb-4">
         <div className="flex items-start gap-3">
-          <div className="rounded-lg bg-purple-100 p-2 text-purple-700">
+          <div className="rounded-lg bg-indigo-100 p-2 text-indigo-700">
             <FlaskIcon className="h-5 w-5" />
           </div>
           <div>
@@ -173,7 +173,7 @@ export default function HistogramasPage() {
                 onClick={() => setProductType(opt.v)}
                 className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition ${
                   productType === opt.v
-                    ? 'border-purple-700 bg-purple-700 text-white'
+                    ? 'border-indigo-700 bg-indigo-700 text-white'
                     : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
                 }`}
               >
@@ -206,33 +206,33 @@ export default function HistogramasPage() {
       {/* ── KPIs ──────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Kpi
-          icon={Package} iconBg="bg-purple-100" iconColor="text-purple-700"
+          icon={Package} iconBg="bg-indigo-100" iconColor="text-indigo-700"
           label="Total lotes"
           value={data?.kpis.total_lots?.toLocaleString('es') ?? '—'}
           subtitle="lotes en el periodo"
           loading={dist.isLoading}
         />
         <Kpi
-          icon={Scale} iconBg="bg-slate-100" iconColor="text-slate-700"
+          icon={Scale} iconBg="bg-stone-100" iconColor="text-stone-700"
           label="Peso medio"
           value={data ? `${data.kpis.avg_grammage} g` : '—'}
           subtitle="promedio del periodo"
           loading={dist.isLoading}
         />
         <Kpi
-          icon={Target} iconBg="bg-emerald-100" iconColor="text-emerald-700"
+          icon={Target} iconBg="bg-teal-50" iconColor="text-teal-700"
           label={`% en rango óptimo (${data?.config.optimal_min ?? 40}–${data?.config.optimal_max ?? 60} g)`}
           value={data ? `${data.kpis.in_optimal_pct}%` : '—'}
           subtitle={data ? `${data.kpis.in_optimal_lots} lotes` : ''}
-          valueColor="text-emerald-700"
+          valueColor="text-teal-700"
           loading={dist.isLoading}
         />
         <Kpi
-          icon={AlertTriangle} iconBg="bg-rose-100" iconColor="text-rose-700"
+          icon={AlertTriangle} iconBg="bg-rose-100" iconColor="text-rose-800"
           label="% fuera de rango"
           value={data ? `${data.kpis.out_of_range_pct}%` : '—'}
           subtitle={data ? `${data.kpis.out_of_range_lots} lotes` : ''}
-          valueColor="text-rose-700"
+          valueColor="text-rose-800"
           loading={dist.isLoading}
         />
       </div>
@@ -325,9 +325,9 @@ export default function HistogramasPage() {
         </section>
 
         {/* Insight clave */}
-        <section className="rounded-xl border border-purple-200 bg-purple-50/40 p-5">
+        <section className="rounded-xl border border-indigo-200 bg-indigo-50/40 p-5">
           <div className="mb-3 flex items-center gap-2">
-            <Lightbulb className="h-5 w-5 text-purple-600" />
+            <Lightbulb className="h-5 w-5 text-indigo-600" />
             <h3 className="text-base font-semibold text-slate-900">Insight clave</h3>
           </div>
           {data ? (
@@ -339,15 +339,15 @@ export default function HistogramasPage() {
               <p className="mt-3 text-xs leading-relaxed text-slate-600">
                 {data.insight.detail}
               </p>
-              <div className="mt-4 border-t border-purple-200 pt-3">
+              <div className="mt-4 border-t border-indigo-200 pt-3">
                 <div className="mb-2 flex items-center gap-2">
-                  <TrendingUpIcon className="h-4 w-4 text-purple-600" />
+                  <TrendingUpIcon className="h-4 w-4 text-indigo-600" />
                   <h4 className="text-sm font-semibold text-slate-900">Impacto potencial</h4>
                 </div>
                 <ul className="space-y-1 text-xs text-slate-700">
                   {data.insight.impacts.map((imp, i) => (
                     <li key={i} className="flex items-start gap-1.5">
-                      <span className="mt-1 h-1 w-1 shrink-0 rounded-full bg-purple-600" />
+                      <span className="mt-1 h-1 w-1 shrink-0 rounded-full bg-indigo-600" />
                       {imp}
                     </li>
                   ))}
@@ -442,17 +442,17 @@ export default function HistogramasPage() {
           {data ? (
             <dl className="space-y-3 text-sm">
               <SummaryRow label="Mínimo" value={`${data.summary.min} g`} />
-              <SummaryRow label="Máximo" value={`${data.summary.max} g`} valueColor="text-rose-600" />
+              <SummaryRow label="Máximo" value={`${data.summary.max} g`} valueColor="text-rose-800" />
               <SummaryRow label="Promedio" value={`${data.summary.avg} g`} />
               <SummaryRow
                 label="Días en rango"
                 value={`${data.summary.days_in_range_pct}%`}
-                valueColor="text-emerald-600"
+                valueColor="text-teal-700"
               />
               <SummaryRow
                 label="Días fuera de rango"
                 value={`${data.summary.days_out_pct}%`}
-                valueColor="text-amber-600"
+                valueColor="text-orange-700"
               />
             </dl>
           ) : (
@@ -508,7 +508,7 @@ function renderInsightMain(text: string) {
   return (
     <>
       {before}
-      <span className="text-base font-bold text-purple-700">{pct}</span>
+      <span className="text-base font-bold text-indigo-700">{pct}</span>
       {after}
     </>
   )
